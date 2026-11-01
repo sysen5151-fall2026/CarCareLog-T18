@@ -1,0 +1,77 @@
+openapi: 3.0.3
+info:
+  title: CarCareLog implemented local-demo contract
+  version: 0.1.0
+  description: Manual path only. No owner authentication or external AI service.
+servers:
+  - url: http://127.0.0.1:8772
+paths:
+  /api/records:
+    post:
+      operationId: createConfirmedRecord
+      x-function-ids: [F.2.2.1, F.2.2.3]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmedRecord'
+      responses:
+        '201':
+          description: SQLite commit completed; response contains integer id.
+        '400':
+          description: Invalid fields or owner_confirmed is not boolean true.
+        '404':
+          description: Selected vehicle does not exist.
+  /api/dashboard:
+    get:
+      operationId: prepareVehicleInformation
+      x-function-ids: [F.2.2.4]
+      parameters:
+        - in: query
+          name: vehicle_id
+          required: true
+          schema: {type: integer, minimum: 1}
+      responses:
+        '200':
+          description: vehicle, confirmed records, reminders, integer total_cents and monthly costs.
+        '400':
+          description: Invalid vehicle id.
+        '404':
+          description: Vehicle not found.
+components:
+  schemas:
+    ConfirmedRecord:
+      type: object
+      required: [vehicle_id, service_date, service_item, category, mileage, cost, owner_confirmed]
+      properties:
+        vehicle_id: {type: integer, minimum: 1}
+        service_date: {type: string, format: date, description: On or before today.}
+        service_item: {type: string, enum: [Oil change, Tire rotation, Brake service, Inspection, Battery, Other]}
+        category: {type: string, enum: [Maintenance, Repair]}
+        mileage: {type: integer, minimum: 0, maximum: 10000000}
+        cost: {type: string, description: Nonnegative decimal USD, at most two decimal places, maximum 1000000.}
+        provider: {type: string, maxLength: 120}
+        notes: {type: string, maxLength: 2000}
+        owner_confirmed: {type: boolean, enum: [true]}
+x-model-internal-flows:
+  - name: Confirmed service record
+    source: F.2.2.3
+    receiver: F.2.3
+    transport: In-process parameterized SQLite INSERT through C.3; no separate HTTP endpoint.
+  - name: Stored record confirmation
+    source: F.2.3
+    receiver: F.2.2.3
+    transport: Commit success and lastrowid, exposed as POST response id.
+  - name: Authorized records and source references
+    source: F.2.3
+    receiver: F.2.2.4
+    transport: SQLite SELECT filtered by selected vehicle. Owner authentication remains planned.
+  - name: Prepared vehicle information
+    source: F.2.2.4
+    receiver: F.2.1
+    transport: GET dashboard response consumed by Web Interface.
+  - name: AI proposal or answer result
+    source: F.2.2.2
+    receiver: F.2.2.4
+    transport: Modeled internal boundary only; not implemented or used as confirmed history.

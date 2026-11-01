@@ -1,6 +1,5 @@
 """CarCareLog local prototype. Run with: python3 backend/app.py"""
 
-import calendar
 import csv
 import io
 import json
@@ -13,6 +12,15 @@ from decimal import Decimal, InvalidOperation
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
+
+if __package__:
+    from .function_f22 import (add_months, validate_and_route_owner_request,
+        coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders)
+else:
+    from function_f22 import (add_months, validate_and_route_owner_request,
+        coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders)
+
+LOCAL_POLICY = {"mode": "local_demo", "require_confirmation": True}
 
 ROOT = Path(__file__).resolve().parents[1]
 DB_PATH = Path(os.environ.get("CARCARE_DB", ROOT / "data" / "carcare.db"))
@@ -100,42 +108,14 @@ def all_records(db, vehicle_id):
         (vehicle_id,))]
 
 
-def add_months(day, months):
-    index = day.year * 12 + day.month - 1 + months
-    year, month = divmod(index, 12)
-    month += 1
-    return date(year, month, min(day.day, calendar.monthrange(year, month)[1]))
-
-
 def dashboard(db, vehicle_id):
+    """F.2.2.4 adapter: query C.3 and calculate prepared vehicle information."""
     car = vehicle(db, vehicle_id)
     records = all_records(db, vehicle_id)
-    months = {}
-    for row in records:
-        key = row["service_date"][:7]
-        months.setdefault(key, {"Maintenance": 0, "Repair": 0})[row["category"]] += row["cost_cents"]
-    reminders = []
-    for rule in db.execute("SELECT * FROM reminders WHERE vehicle_id=? ORDER BY service_item", (vehicle_id,)):
-        item = dict(rule)
-        matching = [r for r in records if r["service_item"] == rule["service_item"]]
-        item.update(status="Needs service history", due_date=None, due_mileage=None, record_id=None)
-        if matching:
-            last = matching[0]
-            due_date = add_months(date.fromisoformat(last["service_date"]), rule["interval_months"]) if rule["interval_months"] else None
-            due_km = last["mileage"] + rule["interval_km"] if rule["interval_km"] else None
-            days_left = (due_date - date.today()).days if due_date else None
-            km_left = due_km - car["mileage"] if due_km is not None else None
-            status = "Scheduled"
-            if (days_left is not None and days_left <= 0) or (km_left is not None and km_left <= 0):
-                status = "Due / overdue"
-            elif (days_left is not None and days_left <= 30) or (km_left is not None and km_left <= 1000):
-                status = "Upcoming"
-            item.update(status=status, due_date=due_date.isoformat() if due_date else None,
-                        due_mileage=due_km, record_id=last["id"])
-        reminders.append(item)
-    return {"vehicle": car, "records": records, "reminders": reminders,
-            "total_cents": sum(r["cost_cents"] for r in records),
-            "monthly": [{"month": m, **months[m]} for m in sorted(months, reverse=True)]}
+    rules = [dict(r) for r in db.execute(
+        "SELECT * FROM reminders WHERE vehicle_id=? ORDER BY service_item", (vehicle_id,))]
+    return calculate_maintenance_summary_and_reminders(records, rules,
+        vehicle_context=car, as_of=date.today())
 
 
 def csv_export(records):
@@ -247,13 +227,13 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError("Choose a supported history question.")
                 return self.reply({"answer": answer, "record_ids": sources, "method": "Recorded-data lookup"})
             if path == "/api/records" and self.command == "POST":
-                car_id = integer(body, "vehicle_id", minimum=1)
-                vehicle(db, car_id)
-                fields = record_fields(body)
-                rec_id = db.execute("INSERT INTO records(vehicle_id,service_date,service_item,category,mileage,cost_cents,provider,notes) VALUES(?,?,?,?,?,?,?,?)", (car_id, *fields)).lastrowid
-                db.execute("UPDATE vehicles SET mileage=max(mileage,?) WHERE id=?", (fields[3], car_id))
-                db.commit()
-                return self.reply({"id": rec_id}, 201)
+                request = validate_and_route_owner_request(body,
+                    owner_authorization_and_confirmation_policy=LOCAL_POLICY,
+                    configuration_and_maintenance_instructions={"operations": ["create_record"]},
+                    record_store=db, field_validator=record_fields)
+                result = coordinate_confirmed_record_transaction(request,
+                    owner_authorization_and_confirmation_policy=LOCAL_POLICY, record_store=db)
+                return self.reply(result, 201)
             match = re.fullmatch(r"/api/records/(\d+)", path)
             if match and self.command in ("PUT", "DELETE"):
                 rec_id = int(match[1])
@@ -263,6 +243,8 @@ class Handler(BaseHTTPRequestHandler):
                 if self.command == "DELETE":
                     db.execute("DELETE FROM records WHERE id=?", (rec_id,))
                 else:
+                    if body.get("owner_confirmed") is not True:
+                        raise ValueError("Explicit confirmation is required before updating a record.")
                     fields = record_fields(body)
                     db.execute("UPDATE records SET service_date=?,service_item=?,category=?,mileage=?,cost_cents=?,provider=?,notes=? WHERE id=?", (*fields, rec_id))
                     db.execute("UPDATE vehicles SET mileage=max(mileage,?) WHERE id=?", (fields[3], row["vehicle_id"]))

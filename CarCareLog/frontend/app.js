@@ -90,6 +90,7 @@ bindForm('vehicle-form', async body => {
 });
 bindForm('record-form', async body => {
   body.vehicle_id = currentId;
+  body.owner_confirmed = true; // Explicit Confirm & save form submission.
   await api(body.id ? `/api/records/${body.id}` : '/api/records', body.id ? 'PUT' : 'POST', body);
   await reload(); message('Record confirmed and saved. Reminders and spending have been updated.');
 });

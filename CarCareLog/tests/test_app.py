@@ -8,9 +8,7 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-spec = importlib.util.spec_from_file_location("app", Path(__file__).resolve().parents[1] / "backend" / "app.py")
-app = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(app)
+from backend import app
 
 
 class QuietHandler(app.Handler):
@@ -54,7 +52,7 @@ class AppTests(unittest.TestCase):
 
     def record(self, car, **changes):
         body = dict(vehicle_id=car, service_date=date.today().isoformat(), service_item="Oil change",
-                    category="Maintenance", mileage=10000, cost="80.25", provider="Garage", notes="")
+                    category="Maintenance", mileage=10000, cost="80.25", provider="Garage", notes="", owner_confirmed=True)
         body.update(changes)
         return self.call("/api/records", "POST", body)
 
@@ -76,7 +74,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(data["monthly"][0]["Maintenance"], 10)
         self.assertEqual(data["monthly"][0]["Repair"], 20)
         original = data["records"][-1]
-        body = {**original, "cost": "12.34", "notes": "Updated"}
+        body = {**original, "cost": "12.34", "notes": "Updated", "owner_confirmed": True}
         self.assertEqual(self.call(f'/api/records/{row["id"]}', "PUT", body)[0], 200)
         self.assertEqual(self.dashboard(car)["total_cents"], 1254)
         self.assertEqual(self.call(f'/api/records/{row["id"]}', "DELETE")[0], 200)
