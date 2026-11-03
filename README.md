@@ -82,7 +82,7 @@ Data is stored in `data/carcare.db` using SQLite. This file is excluded from Git
 
 Mileage is currently entered in kilometers and costs in USD. The owner enters the interval and its vehicle-manual reference; the application does not retrieve or verify the manual. Demo intervals are examples. Reminders appear on the page, with no email or phone notifications.
 
-The current upcoming-service window is 30 days or 1,000 km. The requirements document specifies 30 days or 500 miles, so the distance window needs to be reconciled before SR08 acceptance testing.
+The upcoming-service window is 30 days OR 500 international miles (804.672 km). Distance remains stored in km. Exact, below and above distance/time boundary tests retain this earlier requirements-document baseline; native Innoslate requirement statements are unchanged.
 
 The server listens on `127.0.0.1` and is intended for one local user. Owner login and access control, receipt processing, external AI integration and automatic recovery are future work. Availability and usability targets still need validation.
 
@@ -116,3 +116,8 @@ python3 -m unittest discover -s tests -v
 ```
 
 The checks use a temporary database and do not change your saved vehicle records.
+
+
+## PMC2 TA4 revision 3 November 2026
+
+Use branch `codex/milestone2-video`, local port 8772 and the matching packaged source. Read `docs/traceability.md`, `docs/requirements-baseline.json`, `docs/route-table.md` and `contracts/api-v1.yaml` from the repository root. Four localhost internal contract endpoints link F.2.2.1-F.2.2.4 to typed inputs and outputs. External AI is unavailable and returns 503; successful OCR, generative AI and owner authentication remain planned. Native model status and system acceptance remain open. The latest test log and CI receipt, rather than an older passing run, establish the revision tested.

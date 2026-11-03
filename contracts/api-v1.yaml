@@ -1,77 +1,1410 @@
-openapi: 3.0.3
-info:
-  title: CarCareLog implemented local-demo contract
-  version: 0.1.0
-  description: Manual path only. No owner authentication or external AI service.
-servers:
-  - url: http://127.0.0.1:8772
-paths:
-  /api/records:
-    post:
-      operationId: createConfirmedRecord
-      x-function-ids: [F.2.2.1, F.2.2.3]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConfirmedRecord'
-      responses:
-        '201':
-          description: SQLite commit completed; response contains integer id.
-        '400':
-          description: Invalid fields or owner_confirmed is not boolean true.
-        '404':
-          description: Selected vehicle does not exist.
-  /api/dashboard:
-    get:
-      operationId: prepareVehicleInformation
-      x-function-ids: [F.2.2.4]
-      parameters:
-        - in: query
-          name: vehicle_id
-          required: true
-          schema: {type: integer, minimum: 1}
-      responses:
-        '200':
-          description: vehicle, confirmed records, reminders, integer total_cents and monthly costs.
-        '400':
-          description: Invalid vehicle id.
-        '404':
-          description: Vehicle not found.
-components:
-  schemas:
-    ConfirmedRecord:
-      type: object
-      required: [vehicle_id, service_date, service_item, category, mileage, cost, owner_confirmed]
-      properties:
-        vehicle_id: {type: integer, minimum: 1}
-        service_date: {type: string, format: date, description: On or before today.}
-        service_item: {type: string, enum: [Oil change, Tire rotation, Brake service, Inspection, Battery, Other]}
-        category: {type: string, enum: [Maintenance, Repair]}
-        mileage: {type: integer, minimum: 0, maximum: 10000000}
-        cost: {type: string, description: Nonnegative decimal USD, at most two decimal places, maximum 1000000.}
-        provider: {type: string, maxLength: 120}
-        notes: {type: string, maxLength: 2000}
-        owner_confirmed: {type: boolean, enum: [true]}
-x-model-internal-flows:
-  - name: Confirmed service record
-    source: F.2.2.3
-    receiver: F.2.3
-    transport: In-process parameterized SQLite INSERT through C.3; no separate HTTP endpoint.
-  - name: Stored record confirmation
-    source: F.2.3
-    receiver: F.2.2.3
-    transport: Commit success and lastrowid, exposed as POST response id.
-  - name: Authorized records and source references
-    source: F.2.3
-    receiver: F.2.2.4
-    transport: SQLite SELECT filtered by selected vehicle. Owner authentication remains planned.
-  - name: Prepared vehicle information
-    source: F.2.2.4
-    receiver: F.2.1
-    transport: GET dashboard response consumed by Web Interface.
-  - name: AI proposal or answer result
-    source: F.2.2.2
-    receiver: F.2.2.4
-    transport: Modeled internal boundary only; not implemented or used as confirmed history.
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CarCareLog PMC2 local demo contract",
+    "version": "0.2.0",
+    "description": "TA4 revision 2026-11-03. Internal HTTP adapters expose the same in-process functions. Localhost only; no owner authentication or production external AI."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8772"
+    }
+  ],
+  "paths": {
+    "/api/records": {
+      "post": {
+        "operationId": "createConfirmedRecord",
+        "summary": "UI manual record path: route F.2.2.1, confirm F.2.2.3, commit to C.3",
+        "x-function-id": "F.2.2.3",
+        "x-decomposes": "F.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "201": {
+            "description": "Successful local-demo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredConfirmation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmedRecord"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "operationId": "getPreparedVehicleInformation",
+        "summary": "getPreparedVehicleInformation",
+        "x-function-id": "F.2.2.4",
+        "x-decomposes": "F.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "200": {
+            "description": "Successful local-demo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreparedInformation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "vehicle_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/internal/v1/validate-and-route": {
+      "post": {
+        "operationId": "validateAndRouteRequest",
+        "summary": "Produce routed DTO for the confirmed-transaction input; no persistence",
+        "x-function-id": "F.2.2.1",
+        "x-decomposes": "F.2.2",
+        "x-internal": true,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "200": {
+            "description": "Successful local-demo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoutedTransaction"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/confirmed-transaction": {
+      "post": {
+        "operationId": "coordinateConfirmedTransaction",
+        "summary": "Consume routed DTO, revalidate fields and confirmation, commit before returning id",
+        "x-function-id": "F.2.2.3",
+        "x-decomposes": "F.2.2",
+        "x-internal": true,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "201": {
+            "description": "Successful local-demo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoredConfirmation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoutedTransaction"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/prepare-information": {
+      "post": {
+        "operationId": "calculatePreparedInformation",
+        "summary": "Query C.3 for selected-vehicle records, then calculate costs and reminders",
+        "x-function-id": "F.2.2.4",
+        "x-decomposes": "F.2.2",
+        "x-internal": true,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "200": {
+            "description": "Successful local-demo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreparedInformation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehicleQuery"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/coordinate-ai": {
+      "post": {
+        "operationId": "coordinateAIRequest",
+        "summary": "Explicit unavailable boundary; no external runtime or successful AI output",
+        "x-function-id": "F.2.2.2",
+        "x-decomposes": "F.2.2",
+        "x-internal": true,
+        "x-implementation-status": "unavailable-only; external AI remains planned",
+        "responses": {
+          "503": {
+            "description": "External AI unimplemented. No proposal is stored; manual path remains available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIUnavailable"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vehicles": {
+      "get": {
+        "operationId": "listVehicles",
+        "summary": "Local vehicle selector; no owner accounts",
+        "x-function-id": "F.2.1",
+        "x-decomposes": "F.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "200": {
+            "description": "Vehicles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Vehicle"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createVehicle",
+        "summary": "createVehicle",
+        "x-function-id": "F.2.2.1",
+        "x-decomposes": "F.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "201": {
+            "description": "Successful local-demo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Vehicle"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehicleRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vehicles/{id}": {
+      "put": {
+        "operationId": "updateVehicle",
+        "summary": "updateVehicle",
+        "x-function-id": "F.2.2.1",
+        "x-decomposes": "F.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "200": {
+            "description": "Successful local-demo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Vehicle"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehicleRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/api/demo": {
+      "post": {
+        "operationId": "loadClassroomFixtures",
+        "summary": "Development fixture only; requires empty database",
+        "x-function-id": "F.2.1",
+        "x-decomposes": "F.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "201": {
+            "description": "Successful local-demo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleQuery"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyObject"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/records/{id}": {
+      "put": {
+        "operationId": "editConfirmedRecord",
+        "summary": "editConfirmedRecord",
+        "x-function-id": "F.2.2.3",
+        "x-decomposes": "F.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "200": {
+            "description": "Successful local-demo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OK"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditRecord"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteRecord",
+        "summary": "deleteRecord",
+        "x-function-id": "F.2.2.3",
+        "x-decomposes": "F.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "200": {
+            "description": "Successful local-demo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OK"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/api/reminders": {
+      "post": {
+        "operationId": "setReferencedReminderRule",
+        "summary": "setReferencedReminderRule",
+        "x-function-id": "F.2.2.4",
+        "x-decomposes": "F.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "200": {
+            "description": "Successful local-demo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OK"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReminderRule"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reminders/{id}": {
+      "delete": {
+        "operationId": "deleteReminderRule",
+        "summary": "deleteReminderRule",
+        "x-function-id": "F.2.2.4",
+        "x-decomposes": "F.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "200": {
+            "description": "Successful local-demo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OK"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/api/answer": {
+      "get": {
+        "operationId": "lookupRecordedAnswer",
+        "summary": "Deterministic record lookup, not external AI",
+        "x-function-id": "F.2.2.4",
+        "x-decomposes": "F.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "200": {
+            "description": "Successful local-demo result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordAnswer"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "vehicle_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "question",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "oil",
+                "total"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/api/export": {
+      "get": {
+        "operationId": "exportSelectedVehicleRecords",
+        "summary": "exportSelectedVehicleRecords",
+        "x-function-id": "F.2.1",
+        "x-decomposes": "F.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local-demo",
+        "responses": {
+          "200": {
+            "description": "UTF-8 BOM CSV; formula-leading strings escaped",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or unconfirmed input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "vehicle_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "VehicleRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "mileage"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "mileage": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000000
+          }
+        }
+      },
+      "Vehicle": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/VehicleRequest"
+          },
+          {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        ]
+      },
+      "RecordInput": {
+        "type": "object",
+        "required": [
+          "service_date",
+          "service_item",
+          "category",
+          "mileage",
+          "cost"
+        ],
+        "properties": {
+          "service_date": {
+            "type": "string",
+            "format": "date",
+            "description": "On or before today"
+          },
+          "service_item": {
+            "type": "string",
+            "enum": [
+              "Oil change",
+              "Tire rotation",
+              "Brake service",
+              "Inspection",
+              "Battery",
+              "Other"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "Maintenance",
+              "Repair"
+            ]
+          },
+          "mileage": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000000
+          },
+          "cost": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d{1,2})?$",
+            "description": "USD 0 to 1000000, maximum two decimal places; server also accepts compatible JSON numbers"
+          },
+          "provider": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        }
+      },
+      "ConfirmedRecord": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RecordInput"
+          },
+          {
+            "type": "object",
+            "required": [
+              "vehicle_id",
+              "owner_confirmed"
+            ],
+            "properties": {
+              "vehicle_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "operation": {
+                "type": "string",
+                "enum": [
+                  "create_record"
+                ]
+              },
+              "owner_confirmed": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "RouteRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RecordInput"
+          },
+          {
+            "type": "object",
+            "required": [
+              "vehicle_id"
+            ],
+            "properties": {
+              "vehicle_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "operation": {
+                "type": "string",
+                "enum": [
+                  "create_record"
+                ]
+              },
+              "owner_confirmed": {
+                "type": "boolean"
+              }
+            }
+          }
+        ]
+      },
+      "RoutedTransaction": {
+        "type": "object",
+        "required": [
+          "operation",
+          "vehicle_id",
+          "owner_confirmed",
+          "record"
+        ],
+        "properties": {
+          "operation": {
+            "type": "string",
+            "enum": [
+              "create_record"
+            ]
+          },
+          "vehicle_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "owner_confirmed": {
+            "type": "boolean"
+          },
+          "record": {
+            "$ref": "#/components/schemas/RecordInput"
+          }
+        }
+      },
+      "StoredConfirmation": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "VehicleQuery": {
+        "type": "object",
+        "required": [
+          "vehicle_id"
+        ],
+        "properties": {
+          "vehicle_id": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "PreparedInformation": {
+        "type": "object",
+        "required": [
+          "vehicle",
+          "records",
+          "reminders",
+          "total_cents",
+          "monthly"
+        ],
+        "properties": {
+          "vehicle": {
+            "$ref": "#/components/schemas/Vehicle"
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "vehicle_id",
+                "service_date",
+                "service_item",
+                "mileage",
+                "cost_cents"
+              ],
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "vehicle_id": {
+                  "type": "integer"
+                },
+                "service_date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "service_item": {
+                  "type": "string"
+                },
+                "mileage": {
+                  "type": "integer"
+                },
+                "cost_cents": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "reminders": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "service_item",
+                "status",
+                "due_date",
+                "due_mileage",
+                "record_id"
+              ],
+              "properties": {
+                "service_item": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "Scheduled",
+                    "Upcoming",
+                    "Due / overdue",
+                    "Needs service history"
+                  ]
+                },
+                "due_date": {
+                  "type": "string",
+                  "format": "date",
+                  "nullable": true
+                },
+                "due_mileage": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "record_id": {
+                  "type": "integer",
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "total_cents": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "monthly": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "AIRequest": {
+        "type": "object",
+        "required": [
+          "vehicle_id",
+          "kind"
+        ],
+        "properties": {
+          "vehicle_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "receipt",
+              "question"
+            ]
+          },
+          "question": {
+            "type": "string"
+          },
+          "receipt_reference": {
+            "type": "string"
+          }
+        }
+      },
+      "AIUnavailable": {
+        "type": "object",
+        "required": [
+          "status",
+          "vehicle_id",
+          "proposal",
+          "message"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "unavailable"
+            ]
+          },
+          "vehicle_id": {
+            "type": "integer"
+          },
+          "proposal": {
+            "type": "object",
+            "nullable": true,
+            "description": "Always null in current implementation"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ReminderRule": {
+        "type": "object",
+        "required": [
+          "vehicle_id",
+          "service_item",
+          "interval_km",
+          "interval_months",
+          "reference"
+        ],
+        "properties": {
+          "vehicle_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "service_item": {
+            "type": "string"
+          },
+          "interval_km": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "interval_months": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 120
+          },
+          "reference": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          }
+        },
+        "description": "At least one interval must be positive. Source reference required."
+      },
+      "OK": {
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        }
+      },
+      "RecordAnswer": {
+        "type": "object",
+        "required": [
+          "answer",
+          "record_ids",
+          "method"
+        ],
+        "properties": {
+          "answer": {
+            "type": "string"
+          },
+          "record_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "Recorded-data lookup"
+            ]
+          }
+        }
+      },
+      "EmptyObject": {
+        "type": "object"
+      },
+      "EditRecord": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RecordInput"
+          },
+          {
+            "type": "object",
+            "required": [
+              "owner_confirmed"
+            ],
+            "properties": {
+              "owner_confirmed": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "x-model-internal-flows": [
+    {
+      "name": "Validated and routed owner request",
+      "source": "F.2.2.1",
+      "receiver": "F.2.2.3",
+      "operation": "/internal/v1/validate-and-route",
+      "schema": "RoutedTransaction",
+      "consumer": "/internal/v1/confirmed-transaction"
+    },
+    {
+      "name": "Validated AI request",
+      "source": "F.2.2.1",
+      "receiver": "F.2.2.2",
+      "operation": "/internal/v1/coordinate-ai",
+      "schema": "AIRequest",
+      "consumer": "/internal/v1/coordinate-ai"
+    },
+    {
+      "name": "Confirmed service record",
+      "source": "F.2.2.3",
+      "receiver": "F.2.3",
+      "operation": "/internal/v1/confirmed-transaction",
+      "schema": "RoutedTransaction",
+      "consumer": "SQLite parameterized INSERT"
+    },
+    {
+      "name": "Stored record confirmation",
+      "source": "F.2.3",
+      "receiver": "F.2.2.3",
+      "operation": "/internal/v1/confirmed-transaction",
+      "schema": "StoredConfirmation",
+      "consumer": "Commit then lastrowid"
+    },
+    {
+      "name": "Authorized records and source references",
+      "source": "F.2.3",
+      "receiver": "F.2.2.4",
+      "operation": "/internal/v1/prepare-information",
+      "schema": "PreparedInformation",
+      "consumer": "SQLite SELECT selected vehicle; owner auth planned"
+    },
+    {
+      "name": "Prepared vehicle information",
+      "source": "F.2.2.4",
+      "receiver": "F.2.1",
+      "operation": "/internal/v1/prepare-information",
+      "schema": "PreparedInformation",
+      "consumer": "GET /api/dashboard"
+    },
+    {
+      "name": "AI proposal or answer result",
+      "source": "F.2.2.2",
+      "receiver": "F.2.2.4",
+      "operation": "/internal/v1/coordinate-ai",
+      "schema": "AIUnavailable",
+      "consumer": "503 only; successful AI result remains planned"
+    }
+  ],
+  "x-reminder-window": {
+    "days": 30,
+    "international_miles": 500,
+    "kilometres": 804.672,
+    "due_condition": "date limit OR mileage limit reached",
+    "source": "Earlier requirements-document baseline noted in repository README; native ASR wording remains unchanged"
+  }
+}

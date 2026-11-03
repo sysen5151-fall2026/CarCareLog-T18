@@ -1,0 +1,264 @@
+{
+  "model_snapshot": "31 October 2026; allocations preserved; model statuses unchanged",
+  "parent": {
+    "document": "SRD",
+    "number": "1.4.1.2",
+    "entity_id": "263241",
+    "text": "The CarCareLog System shall process each accepted vehicle-service request according to its requested maintenance-information operation."
+  },
+  "requirements": [
+    {
+      "document": "ASR",
+      "number": "1.3.2",
+      "entity_id": "279101",
+      "text": "The Application Service shall interface with the Web Interface through the Web Interface / Application Service.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.3.1",
+      "entity_id": "279102",
+      "text": "The Application Service shall interface with the Vehicle Record Store through the Application Service / Vehicle Record Store.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.4.4",
+      "entity_id": "279103",
+      "text": "The Application Service shall Calculate Maintenance Summary and Reminders.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.4.3",
+      "entity_id": "279104",
+      "text": "The Application Service shall Coordinate Confirmed Record Transactions.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.4.2",
+      "entity_id": "279105",
+      "text": "The Application Service shall Coordinate AI Requests and Responses.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.4.1",
+      "entity_id": "279106",
+      "text": "The Application Service shall Validate and Route Owner Requests.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.2.6",
+      "entity_id": "279107",
+      "text": "The Application Service shall provide Prepared vehicle information to the Web Interface.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.2.5",
+      "entity_id": "279108",
+      "text": "The Application Service shall provide Authorized vehicle record query to the Vehicle Record Store.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.2.1",
+      "entity_id": "279109",
+      "text": "The Application Service shall provide Confirmed service record to the Vehicle Record Store.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.2.4",
+      "entity_id": "279110",
+      "text": "The Application Service shall provide Service status and incident report to the Application Operator.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.2.3",
+      "entity_id": "279111",
+      "text": "The Application Service shall provide Vehicle question and authorized evidence context to the AI Model Runtime.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.2.2",
+      "entity_id": "279112",
+      "text": "The Application Service shall provide Receipt extraction request to the AI Model Runtime.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.1.9",
+      "entity_id": "279113",
+      "text": "The Application Service shall accept Authorized records and source references from the Vehicle Record Store.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.1.8",
+      "entity_id": "279114",
+      "text": "The Application Service shall accept Validated owner service request from the Web Interface.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.1.7",
+      "entity_id": "279115",
+      "text": "The Application Service shall accept Evidence-backed answer or AI failure response from the AI Model Runtime.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.1.6",
+      "entity_id": "279116",
+      "text": "The Application Service shall accept Proposed date, mileage, items, cost, and provider from the AI Model Runtime.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.1.5",
+      "entity_id": "279117",
+      "text": "The Application Service shall accept Configuration and maintenance instructions from the Application Operator.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.1.4",
+      "entity_id": "279118",
+      "text": "The Application Service shall accept Referenced maintenance interval rules from the Vehicle Owner.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.1.3",
+      "entity_id": "279119",
+      "text": "The Application Service shall accept Configured AI service contract limits from the Application Operator.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.1.2",
+      "entity_id": "279120",
+      "text": "The Application Service shall accept Owner authorization and confirmation policy from the Application Operator.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "1.1.1",
+      "entity_id": "279121",
+      "text": "The Application Service shall accept Stored record confirmation from the Vehicle Record Store.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "ASR",
+      "number": "2.1.1",
+      "entity_id": "279128",
+      "text": "The Application Service shall restrict protected vehicle data used in application processing and AI evidence context to the selected vehicle’s authorized owner.",
+      "status_in_model": "Draft"
+    }
+  ],
+  "scope": "Local manual-record alternative. Owner authentication and production AI are not implemented. Passing a component case does not close its full requirement.",
+  "supplements": [
+    {
+      "document": "FCS",
+      "number": "FCS.1.3.3",
+      "entity_id": "289483",
+      "text": "The Application Service shall exchange the messages defined in IC-03 with the AI Model Runtime using the field, direction, unit and error definitions in that contract.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "FCS",
+      "number": "FCS.2.1.4",
+      "entity_id": "289492",
+      "text": "The Application Service shall rebuild its record-dependent summaries from the restored confirmed records supplied by the Vehicle Record Store after a storage recovery.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "FCS",
+      "number": "FCS.2.1.1",
+      "entity_id": "289489",
+      "text": "The Application Service shall restrict protected vehicle data used in application processing and AI evidence context to the selected vehicle's authorized owner.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "FCS",
+      "number": "FCS.1.4.4",
+      "entity_id": "289488",
+      "text": "The Maintenance Summary Component shall calculate maintenance summaries and reminders from authorized confirmed records and referenced interval rules.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "FCS",
+      "number": "FCS.2.1.2",
+      "entity_id": "289490",
+      "text": "The Application Service shall allow authorized core record read and manual confirmed-record submission when the AI Model Runtime is unavailable.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "FCS",
+      "number": "FCS.2.1.5",
+      "entity_id": "289493",
+      "text": "The Application Service shall retain repeatable regression evidence for its routing, AI coordination, confirmed transactions and maintenance calculations before release.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "FCS",
+      "number": "FCS.2.1.3",
+      "entity_id": "289491",
+      "text": "The Application Service shall provide the proposal, receipt reference, validation outcome and confirmation status needed for the owner to review and confirm a receipt-assisted record.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "FCS",
+      "number": "FCS.1.4.3",
+      "entity_id": "289487",
+      "text": "The Record Transaction Component shall send a maintenance record to the Vehicle Record Store only when the selected vehicle is authorized and the owner has explicitly confirmed the record.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "FCS",
+      "number": "FCS.1.3.2",
+      "entity_id": "289482",
+      "text": "The Application Service shall exchange the messages defined in IC-01 with the Web Interface using the field, direction, unit and error definitions in that contract.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "FCS",
+      "number": "FCS.1.3.4",
+      "entity_id": "289484",
+      "text": "The Application Service shall exchange the messages defined in IC-04 with the Application Operator using the field, direction, unit and error definitions in that contract.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "FCS",
+      "number": "FCS.1.3.1",
+      "entity_id": "289481",
+      "text": "The Application Service shall exchange the messages defined in IC-02 with the Vehicle Record Store using the field, direction, unit and error definitions in that contract.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "FCS",
+      "number": "FCS.1.4.2",
+      "entity_id": "289486",
+      "text": "The AI Coordination Component shall return a receipt proposal, supported answer, insufficient-evidence result or explicit failure for each authorized AI operation.",
+      "status_in_model": "Draft"
+    },
+    {
+      "document": "FCS",
+      "number": "FCS.1.4.1",
+      "entity_id": "289485",
+      "text": "The Request Routing Component shall route each authorized owner service request to the processing path specified by its operation.",
+      "status_in_model": "Draft"
+    }
+  ],
+  "stakeholder_SR08": {
+    "entity_id": "245392",
+    "text": "CarCareLog shall display the upcoming or overdue status of each configured maintenance item for the selected vehicle.",
+    "parameter": "30 days or 500 miles (804.672 km), retained earlier document baseline; native requirement unchanged"
+  }
+}

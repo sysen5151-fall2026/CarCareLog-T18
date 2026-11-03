@@ -91,7 +91,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(self.dashboard(car)["records"], [])
 
     def test_mileage_update_and_reminder_recalculation(self):
-        car = self.car(mileage=14000)
+        car = self.car(mileage=14200)
         self.record(car, mileage=10000)
         self.rule(car)
         self.assertEqual(self.dashboard(car)["reminders"][0]["status"], "Upcoming")

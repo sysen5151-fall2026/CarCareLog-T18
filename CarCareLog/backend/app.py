@@ -15,10 +15,12 @@ from urllib.parse import parse_qs, urlsplit
 
 if __package__:
     from .function_f22 import (add_months, validate_and_route_owner_request,
-        coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders)
+        coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders,
+        coordinate_ai_requests_and_responses)
 else:
     from function_f22 import (add_months, validate_and_route_owner_request,
-        coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders)
+        coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders,
+        coordinate_ai_requests_and_responses)
 
 LOCAL_POLICY = {"mode": "local_demo", "require_confirmation": True}
 
@@ -184,6 +186,46 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply((ROOT / "frontend" / file_name).read_bytes(), content_type=media + "; charset=utf-8")
         body = self.body() if self.command in ("POST", "PUT") else {}
         with connect() as db:
+            # Thin localhost-only contract adapters. They reuse the same model
+            # functions as the product; none establish owner authentication.
+            if path.startswith('/internal/v1/') and self.command == 'POST':
+                if path == '/internal/v1/validate-and-route':
+                    request = validate_and_route_owner_request(body,
+                        owner_authorization_and_confirmation_policy=LOCAL_POLICY,
+                        configuration_and_maintenance_instructions={'operations': ['create_record']},
+                        record_store=db, field_validator=record_fields)
+                    keys = ['service_date', 'service_item', 'category', 'mileage', 'cost_cents', 'provider', 'notes']
+                    record = dict(zip(keys, request['fields']))
+                    record['cost'] = f"{record.pop('cost_cents') / 100:.2f}"
+                    return self.reply({'operation':request['operation'], 'vehicle_id':request['vehicle_id'],
+                        'owner_confirmed':request['owner_confirmed'], 'record':record})
+                if path == '/internal/v1/confirmed-transaction':
+                    if not isinstance(body.get('record'), dict):
+                        raise ValueError('A routed record object is required.')
+                    raw = {**body['record'], 'vehicle_id':body.get('vehicle_id'),
+                           'operation':body.get('operation'), 'owner_confirmed':body.get('owner_confirmed')}
+                    # Revalidate a caller-supplied DTO before the persistence boundary.
+                    request = validate_and_route_owner_request(raw,
+                        owner_authorization_and_confirmation_policy=LOCAL_POLICY,
+                        configuration_and_maintenance_instructions={'operations':['create_record']},
+                        record_store=db, field_validator=record_fields)
+                    return self.reply(coordinate_confirmed_record_transaction(request,
+                        owner_authorization_and_confirmation_policy=LOCAL_POLICY, record_store=db), 201)
+                if path == '/internal/v1/prepare-information':
+                    return self.reply(dashboard(db, integer(body,'vehicle_id',minimum=1)))
+                if path == '/internal/v1/coordinate-ai':
+                    car_id = integer(body, 'vehicle_id', minimum=1)
+                    vehicle(db,car_id)
+                    if body.get('kind') not in ('receipt','question'):
+                        raise ValueError('AI request kind must be receipt or question.')
+                    try:
+                        coordinate_ai_requests_and_responses(body,
+                            configured_ai_service_contract_limits={'enabled':False},
+                            authorized_records_and_source_references=all_records(db,car_id))
+                    except NotImplementedError:
+                        return self.reply({'status':'unavailable', 'vehicle_id':car_id,
+                            'proposal':None, 'message':'External AI is not implemented; use manual entry.'},503)
+                    raise RuntimeError('An unreviewed AI implementation returned unexpectedly.')
             if path == "/api/vehicles":
                 if self.command == "GET":
                     return self.reply([dict(r) for r in db.execute("SELECT * FROM vehicles ORDER BY id")])

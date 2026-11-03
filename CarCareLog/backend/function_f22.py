@@ -9,6 +9,11 @@ owners, extract receipts or call an external AI runtime.
 
 import calendar
 from datetime import date
+from decimal import Decimal
+
+# SR08 baseline distance is 500 international miles; records use kilometres.
+UPCOMING_DAYS = 30
+UPCOMING_DISTANCE_KM = Decimal('500') * Decimal('1.609344')
 
 
 def validate_and_route_owner_request(validated_owner_service_request, *,
@@ -106,11 +111,11 @@ def calculate_maintenance_summary_and_reminders(authorized_records,
             due_date = add_months(date.fromisoformat(last["service_date"]), rule["interval_months"]) if rule["interval_months"] else None
             due_km = last["mileage"] + rule["interval_km"] if rule["interval_km"] else None
             days_left = (due_date-as_of).days if due_date else None
-            km_left = due_km-vehicle_context["mileage"] if due_km is not None else None
+            km_left = Decimal(str(due_km))-Decimal(str(vehicle_context["mileage"])) if due_km is not None else None
             status = "Scheduled"
             if (days_left is not None and days_left <= 0) or (km_left is not None and km_left <= 0):
                 status = "Due / overdue"
-            elif (days_left is not None and days_left <= 30) or (km_left is not None and km_left <= 1000):
+            elif (days_left is not None and days_left <= UPCOMING_DAYS) or (km_left is not None and km_left <= UPCOMING_DISTANCE_KM):
                 status = "Upcoming"
             item.update(status=status, due_date=due_date.isoformat() if due_date else None,
                         due_mileage=due_km, record_id=last["id"])
