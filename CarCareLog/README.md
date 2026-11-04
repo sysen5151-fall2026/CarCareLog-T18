@@ -121,3 +121,9 @@ The checks use a temporary database and do not change your saved vehicle records
 ## PMC2 TA4 revision 3 November 2026
 
 Use branch `codex/milestone2-video`, local port 8772 and the matching packaged source. Read `docs/traceability.md`, `docs/requirements-baseline.json`, `docs/route-table.md` and `contracts/api-v1.yaml` from the repository root. Four localhost internal contract endpoints link F.2.2.1-F.2.2.4 to typed inputs and outputs. External AI is unavailable and returns 503; successful OCR, generative AI and owner authentication remain planned. Native model status and system acceptance remain open. The latest test log and CI receipt, rather than an older passing run, establish the revision tested.
+
+## Current architecture and release
+
+The authoritative repository README and `../docs/DEMO_RELEASE.md` describe the final C.1/C.2/C.3 architecture, the selected C.2.1-C.2.4 decomposition, and release `PMC2-UC2-20261103`. Run `py backend/app.py` from this application directory, or `py CarCareLog/backend/app.py` from the repository root. Reminder, dashboard and AI capabilities are not additional first-level physical assets.
+
+For the classroom sample, the maintenance interval is 8,000 km OR six calendar months. The Upcoming warning is a separate 500 miles (804.672 km) OR 30 days. Neither is a verified interval recommendation for a real vehicle.

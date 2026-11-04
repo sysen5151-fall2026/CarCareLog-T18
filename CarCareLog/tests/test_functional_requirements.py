@@ -212,6 +212,76 @@ class FunctionalRequirementTests(unittest.TestCase):
         self.assertEqual(status,503);self.assertEqual(result['status'],'unavailable')
         self.assertIsNone(result['proposal']);self.assertEqual(self.dashboard(car)['records'],[])
 
+    def test_UC2_update_reload_restore_preserves_ledger_and_other_vehicle(self):
+        """UC.2 / ASR 1.4.4: saved rule changes calculations, not service history.
+
+        API-level integration evidence with a fixed observation date; not a browser,
+        authenticated owner-isolation, or full requirement-acceptance test.
+        """
+        class ObservationDate(date):
+            @classmethod
+            def today(cls):
+                return cls(2026, 11, 3)
+
+        with patch.object(test_app.app, 'date', ObservationDate):
+            car, other = self.car(mileage=52000), self.car('Other vehicle')
+            self.rule(car, km=8000, months=6)
+            self.rule(other, km=5000, months=6)
+            for service, amount, mileage in [('Oil change', '79.99', 44000),
+                                             ('Tire rotation', '35.00', 48000),
+                                             ('Brake service', '245.00', 51500)]:
+                self.assertEqual(self.record(car, service_item=service, cost=amount,
+                    mileage=mileage, service_date='2026-10-01')[0], 201)
+            status, saved = self.record(car, cost='89.99', mileage=52000,
+                                       service_date='2026-10-31')
+            self.assertEqual(status, 201)
+            before, other_before = self.dashboard(car), self.dashboard(other)
+            self.assertEqual((len(before['records']), before['total_cents']), (4, 44998))
+            original_rule = before['reminders'][0]
+            self.assertEqual((original_rule['due_mileage'], original_rule['due_date'],
+                              original_rule['status']), (60000, '2027-04-30', 'Scheduled'))
+            self.assertEqual(self.rule(car, km=1000, months=1)[0], 200)
+            changed = self.dashboard(car)  # fresh HTTP GET and SQLite connection
+            rule = changed['reminders'][0]
+            self.assertEqual((rule['due_mileage'], rule['due_date'], rule['status'],
+                              rule['record_id']), (53000, '2026-11-30', 'Upcoming', saved['id']))
+            self.assertEqual((rule['interval_km'], rule['interval_months'], rule['reference']),
+                             (1000, 1, "Test owner's manual, p. 12"))
+            self.assertEqual(changed['records'], before['records'])
+            self.assertEqual(changed['total_cents'], before['total_cents'])
+            self.assertEqual(self.dashboard(other), other_before)
+            self.assertEqual(self.rule(car, km=8000, months=6)[0], 200)
+            restored = self.dashboard(car)
+            self.assertEqual(restored['reminders'], before['reminders'])
+            self.assertEqual(restored['records'], before['records'])
+            self.assertEqual(restored['total_cents'], before['total_cents'])
+
+    def test_UC2_invalid_update_preserves_saved_rule(self):
+        """UC.2: rejected configuration leaves the last valid rule and ledger intact."""
+        car = self.car()
+        self.record(car)
+        self.rule(car, km=8000, months=6)
+        before = self.dashboard(car)
+        for changes in [dict(interval_km=0, interval_months=0),
+                        dict(reference=''), dict(interval_km=-1)]:
+            request = dict(vehicle_id=car, service_item='Oil change', interval_km=1000,
+                           interval_months=1, reference='Classroom test reference')
+            request.update(changes)
+            self.assertEqual(self.call('/api/reminders', 'POST', request)[0], 400)
+            self.assertEqual(self.dashboard(car), before)
+
+    def test_UC2_repeated_save_keeps_one_rule_and_same_service_records(self):
+        """UC.2: repeated saves update one rule rather than duplicating it or events."""
+        car = self.car()
+        self.record(car)
+        before = self.dashboard(car)
+        for _ in range(3):
+            self.assertEqual(self.rule(car, km=1000, months=1)[0], 200)
+        after = self.dashboard(car)
+        self.assertEqual(len(after['reminders']), 1)
+        self.assertEqual(after['records'], before['records'])
+        self.assertEqual(after['total_cents'], before['total_cents'])
+
     def test_SR08_upcoming_distance_uses_500_miles_in_km(self):
         """SR08: CarCareLog shall display the upcoming or overdue status of each configured maintenance item for the selected vehicle.
 

@@ -44,3 +44,13 @@ Inputs: validated owner service request, selected-vehicle stored records and sto
 `contracts/api-v1.yaml` exposes four internal contract adapters with function IDs and decomposition tags. They invoke the existing functions; external AI returns HTTP 503 and stores no proposal. Internal DTOs are revalidated before persistence. No public deployment or owner authentication is claimed.
 
 Native ASR/CRS/FCS allocations remain unchanged. The test docstrings quote their native requirement statements; scope notes limit the claim to the behavior actually exercised.
+
+## UC.2 release integration evidence
+
+Release PMC2-UC2-20261103 retains UC.1 followed by UC.2. Three additional methods in `CarCareLog/tests/test_functional_requirements.py` support the ASR 1.1.4 rule-input and ASR 1.4.4 calculation subsets:
+
+- `test_UC2_update_reload_restore_preserves_ledger_and_other_vehicle`: update the referenced rule, issue a fresh GET, check date/mileage/status and unchanged records/costs, check the second vehicle, then restore the original rule.
+- `test_UC2_invalid_update_preserves_saved_rule`: reject missing reference, negative interval and an all-zero interval without changing the saved state.
+- `test_UC2_repeated_save_keeps_one_rule_and_same_service_records`: repeated saves retain one rule and do not create maintenance events.
+
+The test observation date is 2026-11-03. Service interval examples remain 8,000 km / six months and temporary 1,000 km / one month. The SR08 warning remains 500 miles (804.672 km) OR 30 days; it is not the maintenance interval. See `docs/DEMO_RELEASE.md` and the packaged release manifest for exact commit and CI evidence. Native requirements remain Draft.

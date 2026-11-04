@@ -12,7 +12,7 @@ Our Innoslate model also includes receipt-assisted entry and questions answered 
 
 ## System boundary
 
-The system of interest is the CarCareLog application. The model places the Web Interface, Application Service, Vehicle Record Store, Reminder Engine, Analytics Dashboard and AI Assistant inside its boundary. In this prototype, the frontend provides the interface and dashboard, while the Python backend handles storage, reminders and history lookup. These model elements are not all separate software modules yet.
+The system of interest is the CarCareLog application. The final physical model decomposes C.0 CarCareLog System into C.1 Web Interface, C.2 Application Service and C.3 Vehicle Record Store. These perform F.2.1 presentation, F.2.2 coordination and F.2.3 record maintenance. C.2 further contains C.2.1 Request Routing, C.2.2 AI Coordination, C.2.3 Record Transaction and C.2.4 Maintenance Summary. Reminder calculation, expense views and record questions are capabilities allocated to those components, not additional first-level assets. The four C.2 responsibilities are modules in one Python service; C.3 uses SQLite. External AI remains planned.
 
 The owner supplies vehicle details, current mileage, service costs and maintenance intervals. CarCareLog stores and uses that information; it does not read mileage from the vehicle or estimate repair prices. Mechanical diagnosis, repair work and booking appointments are outside the project scope. Repair-shop and buyer portals are also outside the initial scope.
 
@@ -47,38 +47,31 @@ Requirement IDs and remaining work are recorded in [MVP scope](docs/MVP_SCOPE.md
 
 You need Python 3.10 or later and a web browser. No extra Python packages are required.
 
-1. Download the project ZIP and extract it, or clone the repository branch containing this prototype.
-2. Open the extracted project folder. You should see `backend`, `frontend` and `README.md`.
-3. Open a terminal in that folder and run the command for your computer.
+1. Check out `codex/milestone2-video`, or extract the current packaged source ZIP. Open the repository root, containing `CarCareLog/`, `docs/` and `contracts/`.
+2. From the repository root, run the application:
 
-**Windows**
+**Windows PowerShell**
 
-In File Explorer, press Alt+D, type `cmd` and press Enter. In the command window, run:
-
-```bat
-py backend/app.py
-```
-
-If `py` is unavailable but Python is on your PATH, use:
-
-```bat
-python backend/app.py
+```powershell
+py CarCareLog/backend/app.py
 ```
 
 **macOS or Linux**
 
 ```bash
-python3 backend/app.py
+python3 CarCareLog/backend/app.py
 ```
 
-4. Keep the terminal open and visit [http://127.0.0.1:8000](http://127.0.0.1:8000).
-5. Click **Add vehicle** to enter your own vehicle, or **Load demo data** to try the example records in an empty database.
+3. Keep the terminal open and visit [http://127.0.0.1:8000](http://127.0.0.1:8000).
+4. Click **Add vehicle**, or use **Load demo data** only with an empty database. For the recorded UC.1 + UC.2 fixture, use `docs/DEMO_RELEASE.md`; do not substitute fresh sample dates for the documented recording.
+
+If your terminal is already inside `CarCareLog/`, use `py backend/app.py` on Windows or `python3 backend/app.py` on macOS/Linux.
 
 Press Ctrl+C in the terminal to stop the application. Saved records remain available when you start it again. The address is local to the computer running the backend; another computer must start its own copy to use that address.
 
 ## Data and prototype limits
 
-Data is stored in `data/carcare.db` using SQLite. This file is excluded from Git. To back up the data, stop the application and copy the database file. Keep it when moving the project to another folder. CSV export includes confirmed service records, but is not a full database backup.
+From the repository root, data is stored in `CarCareLog/data/carcare.db` using SQLite. This file is excluded from Git. To back up the data, stop the application and copy the database file. Keep it when moving the project to another folder. CSV export includes confirmed service records, but is not a full database backup.
 
 Mileage is currently entered in kilometers and costs in USD. The owner enters the interval and its vehicle-manual reference; the application does not retrieve or verify the manual. Demo intervals are examples. Reminders appear on the page, with no email or phone notifications.
 
@@ -101,18 +94,20 @@ Optional settings are `CARCARE_PORT` (default: `8000`) and `CARCARE_DB` (databas
 
 ## Run the checks
 
-From the project folder, run:
+From the repository root, run:
 
 **Windows**
 
 ```bat
+Push-Location CarCareLog
 py -m unittest discover -s tests -v
+Pop-Location
 ```
 
 **macOS or Linux**
 
 ```bash
-python3 -m unittest discover -s tests -v
+(cd CarCareLog && python3 -m unittest discover -s tests -v)
 ```
 
 The checks use a temporary database and do not change your saved vehicle records.
@@ -121,3 +116,9 @@ The checks use a temporary database and do not change your saved vehicle records
 ## PMC2 TA4 revision 3 November 2026
 
 Use branch `codex/milestone2-video`, local port 8772 and the matching packaged source. Read `docs/traceability.md`, `docs/requirements-baseline.json`, `docs/route-table.md` and `contracts/api-v1.yaml` from the repository root. Four localhost internal contract endpoints link F.2.2.1-F.2.2.4 to typed inputs and outputs. External AI is unavailable and returns 503; successful OCR, generative AI and owner authentication remain planned. Native model status and system acceptance remain open. The latest test log and CI receipt, rather than an older passing run, establish the revision tested.
+
+## PMC2 UC 1 and UC 2 release
+
+Release identifier: `PMC2-UC2-20261103`. The packaged `RELEASE_MANIFEST.json` records the exact Git commit, test count and CI evidence. Use that commit consistently for the code ZIP, slides, video and instructor guide. The classroom route remains UC.1 Manage Maintenance Records followed by UC.2 Review Maintenance Reminders.
+
+The original classroom service interval is 8,000 km OR six calendar months, whichever comes first. The temporary UC.2 demonstration rule is 1,000 km OR one calendar month and is restored afterward. These are example intervals with classroom references, not manufacturer recommendations. The separate Upcoming warning window is 500 international miles (804.672 km) OR 30 days before a due limit. At a due limit or later, status is Due / overdue. See `docs/DEMO_RELEASE.md`.
