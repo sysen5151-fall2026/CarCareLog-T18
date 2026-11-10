@@ -1,13 +1,18 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "CarCareLog PMC2 local demo contract",
-    "version": "0.2.0",
-    "description": "TA4 revision 2026-11-03. Internal HTTP adapters expose the same in-process functions. Localhost only; no owner authentication or production external AI."
+    "title": "CarCareLog local prototype contract",
+    "version": "0.3.0",
+    "description": "Internal HTTP adapters expose the modeled in-process functions. The public local record endpoint supports the Chapter 10 baseline and opt-in bundled response."
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:8772"
+      "url": "http://127.0.0.1:8000",
+      "description": "Default local prototype"
+    },
+    {
+      "url": "http://127.0.0.1:8772",
+      "description": "PMC2 fixture configuration"
     }
   ],
   "paths": {
@@ -19,13 +24,24 @@
         "x-decomposes": "F.2",
         "x-internal": false,
         "x-implementation-status": "implemented-local-demo",
+        "parameters": [
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Opt in to Chapter 10 scenario A. Omitting this parameter selects scenario B.",
+            "schema": {
+              "type": "string",
+              "enum": ["dashboard"]
+            }
+          }
+        ],
         "responses": {
           "201": {
-            "description": "Successful local-demo result",
+            "description": "The record has committed. Scenario A also returns the dashboard or signals that a separate refresh is needed.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StoredConfirmation"
+                  "$ref": "#/components/schemas/RecordSaveResult"
                 }
               }
             }
@@ -42,6 +58,26 @@
           },
           "404": {
             "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A previous save used this operation ID for different fields on this vehicle.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The saved record for this operation ID was subsequently deleted.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1004,6 +1040,11 @@
                 "enum": [
                   true
                 ]
+              },
+              "operation_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9-]{16,80}$",
+                "description": "Optional per-vehicle token for replaying the same confirmed create request."
               }
             }
           }
@@ -1075,6 +1116,26 @@
             "minimum": 1
           }
         }
+      },
+      "RecordSaveResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/StoredConfirmation"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "dashboard": {
+                "$ref": "#/components/schemas/PreparedInformation"
+              },
+              "dashboard_unavailable": {
+                "type": "boolean",
+                "enum": [true],
+                "description": "The write committed but the optional dashboard read failed. Refresh the dashboard separately."
+              }
+            }
+          }
+        ]
       },
       "VehicleQuery": {
         "type": "object",

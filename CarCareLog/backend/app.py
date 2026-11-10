@@ -7,20 +7,22 @@ import os
 import re
 import sqlite3
 import traceback
+from contextlib import closing, contextmanager
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from time import perf_counter
 from urllib.parse import parse_qs, urlsplit
 
 if __package__:
     from .function_f22 import (add_months, validate_and_route_owner_request,
         coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders,
-        coordinate_ai_requests_and_responses)
+        coordinate_ai_requests_and_responses, OperationConflict, OperationGone)
 else:
     from function_f22 import (add_months, validate_and_route_owner_request,
         coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders,
-        coordinate_ai_requests_and_responses)
+        coordinate_ai_requests_and_responses, OperationConflict, OperationGone)
 
 LOCAL_POLICY = {"mode": "local_demo", "require_confirmation": True}
 
@@ -38,7 +40,7 @@ def connect():
 
 def init_db():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with connect() as db:
+    with closing(connect()) as db, db:
         db.executescript("""
         CREATE TABLE IF NOT EXISTS vehicles (
             id INTEGER PRIMARY KEY, name TEXT NOT NULL, mileage INTEGER NOT NULL
@@ -54,6 +56,12 @@ def init_db():
             service_item TEXT NOT NULL, interval_km INTEGER NOT NULL,
             interval_months INTEGER NOT NULL, reference TEXT NOT NULL,
             UNIQUE(vehicle_id, service_item)
+        );
+        CREATE TABLE IF NOT EXISTS record_operations (
+            vehicle_id INTEGER NOT NULL REFERENCES vehicles(id),
+            operation_id TEXT NOT NULL, fingerprint TEXT NOT NULL, record_id INTEGER NOT NULL,
+            deleted INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (vehicle_id, operation_id)
         );
         """)
 
@@ -110,12 +118,17 @@ def all_records(db, vehicle_id):
         (vehicle_id,))]
 
 
-def dashboard(db, vehicle_id):
-    """F.2.2.4 adapter: query C.3 and calculate prepared vehicle information."""
+def dashboard_inputs(db, vehicle_id):
     car = vehicle(db, vehicle_id)
     records = all_records(db, vehicle_id)
     rules = [dict(r) for r in db.execute(
         "SELECT * FROM reminders WHERE vehicle_id=? ORDER BY service_item", (vehicle_id,))]
+    return car, records, rules
+
+
+def dashboard(db, vehicle_id):
+    """F.2.2.4 adapter: query C.3 and calculate prepared vehicle information."""
+    car, records, rules = dashboard_inputs(db, vehicle_id)
     return calculate_maintenance_summary_and_reminders(records, rules,
         vehicle_context=car, as_of=date.today())
 
@@ -148,13 +161,32 @@ def seed_demo(db):
 
 
 class Handler(BaseHTTPRequestHandler):
+    @contextmanager
+    def measure(self, stage):
+        start = perf_counter()
+        try:
+            yield
+        finally:
+            self.timings[stage] = (perf_counter() - start) * 1000
+
+    def measured_dashboard(self, db, car_id):
+        with self.measure("store_dashboard"):
+            car, records, rules = dashboard_inputs(db, car_id)
+        with self.measure("app_summary"):
+            return calculate_maintenance_summary_and_reminders(records, rules,
+                vehicle_context=car, as_of=date.today())
+
     def reply(self, payload, status=200, content_type="application/json; charset=utf-8", filename=None):
-        data = json.dumps(payload, ensure_ascii=False).encode() if isinstance(payload, (dict, list)) else payload
+        with self.measure("app_response_encode"):
+            data = json.dumps(payload, ensure_ascii=False).encode() if isinstance(payload, (dict, list)) else payload
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Cache-Control", "no-store")
+        if self.headers.get("X-CarCare-Timing") == "1":
+            self.send_header("Server-Timing", ", ".join(
+                f"{stage};dur={elapsed:.4f}" for stage, elapsed in self.timings.items()))
         if filename:
             self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
         self.end_headers()
@@ -185,7 +217,7 @@ class Handler(BaseHTTPRequestHandler):
             media = {"index.html": "text/html", "app.js": "text/javascript", "styles.css": "text/css"}[file_name]
             return self.reply((ROOT / "frontend" / file_name).read_bytes(), content_type=media + "; charset=utf-8")
         body = self.body() if self.command in ("POST", "PUT") else {}
-        with connect() as db:
+        with closing(connect()) as db, db:
             # Thin localhost-only contract adapters. They reuse the same model
             # functions as the product; none establish owner authentication.
             if path.startswith('/internal/v1/') and self.command == 'POST':
@@ -228,7 +260,9 @@ class Handler(BaseHTTPRequestHandler):
                     raise RuntimeError('An unreviewed AI implementation returned unexpectedly.')
             if path == "/api/vehicles":
                 if self.command == "GET":
-                    return self.reply([dict(r) for r in db.execute("SELECT * FROM vehicles ORDER BY id")])
+                    with self.measure("store_vehicle_list"):
+                        vehicles = [dict(r) for r in db.execute("SELECT * FROM vehicles ORDER BY id")]
+                    return self.reply(vehicles)
                 if self.command == "POST":
                     car_id = db.execute("INSERT INTO vehicles(name,mileage) VALUES(?,?)",
                                         (text_field(body, "name", limit=120), integer(body, "mileage"))).lastrowid
@@ -251,9 +285,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply(vehicle(db, car_id))
             if path in ("/api/dashboard", "/api/export", "/api/answer") and self.command == "GET":
                 car_id = integer({"vehicle_id": query.get("vehicle_id", [""])[0]}, "vehicle_id", minimum=1)
-                data = dashboard(db, car_id)
                 if path == "/api/dashboard":
-                    return self.reply(data)
+                    return self.reply(self.measured_dashboard(db, car_id))
+                data = dashboard(db, car_id)
                 if path == "/api/export":
                     return self.reply(csv_export(data["records"]), content_type="text/csv; charset=utf-8", filename=f"carcarelog-{car_id}.csv")
                 question = query.get("question", [""])[0]
@@ -269,20 +303,32 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError("Choose a supported history question.")
                 return self.reply({"answer": answer, "record_ids": sources, "method": "Recorded-data lookup"})
             if path == "/api/records" and self.command == "POST":
-                request = validate_and_route_owner_request(body,
-                    owner_authorization_and_confirmation_policy=LOCAL_POLICY,
-                    configuration_and_maintenance_instructions={"operations": ["create_record"]},
-                    record_store=db, field_validator=record_fields)
-                result = coordinate_confirmed_record_transaction(request,
-                    owner_authorization_and_confirmation_policy=LOCAL_POLICY, record_store=db)
+                with self.measure("app_validate_and_route"):
+                    request = validate_and_route_owner_request(body,
+                        owner_authorization_and_confirmation_policy=LOCAL_POLICY,
+                        configuration_and_maintenance_instructions={"operations": ["create_record"]},
+                        record_store=db, field_validator=record_fields)
+                with self.measure("store_confirmed_transaction"):
+                    result = coordinate_confirmed_record_transaction(request,
+                        owner_authorization_and_confirmation_policy=LOCAL_POLICY, record_store=db)
+                if query.get("include") == ["dashboard"]:
+                    try:
+                        result["dashboard"] = self.measured_dashboard(db, request["vehicle_id"])
+                    except sqlite3.Error:
+                        # The write already committed. A failed read cannot turn it into a failed save.
+                        result["dashboard_unavailable"] = True
                 return self.reply(result, 201)
             match = re.fullmatch(r"/api/records/(\d+)", path)
             if match and self.command in ("PUT", "DELETE"):
                 rec_id = int(match[1])
+                if self.command == "DELETE":
+                    db.execute("BEGIN IMMEDIATE")
                 row = db.execute("SELECT * FROM records WHERE id=?", (rec_id,)).fetchone()
                 if row is None:
                     raise LookupError("Record not found.")
                 if self.command == "DELETE":
+                    db.execute("UPDATE record_operations SET deleted=1 WHERE vehicle_id=? AND record_id=?",
+                               (row["vehicle_id"], rec_id))
                     db.execute("DELETE FROM records WHERE id=?", (rec_id,))
                 else:
                     if body.get("owner_confirmed") is not True:
@@ -314,8 +360,13 @@ class Handler(BaseHTTPRequestHandler):
         self.reply({"error": "Route not found."}, 404)
 
     def handle_request(self):
+        self.timings = {}
         try:
             self.dispatch()
+        except OperationConflict as exc:
+            self.reply({"error": str(exc)}, 409)
+        except OperationGone as exc:
+            self.reply({"error": str(exc)}, 410)
         except (ValueError, InvalidOperation) as exc:
             self.reply({"error": str(exc)}, 400)
         except LookupError as exc:

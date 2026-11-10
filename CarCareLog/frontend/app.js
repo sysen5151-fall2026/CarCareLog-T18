@@ -1,6 +1,8 @@
 const $ = id => document.getElementById(id);
 const services = ['Oil change', 'Tire rotation', 'Brake service', 'Inspection', 'Battery', 'Other'];
 let cars = [], currentId = null, data = null;
+const bundledDashboard = new URLSearchParams(location.search).get('save') === 'bundled';
+let recordOperation;
 const money = cents => new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'}).format(cents / 100);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[ch]));
 const today = () => {const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;};
@@ -59,6 +61,7 @@ function editVehicle(car) {
 }
 function editRecord(record) {
   const form = $('record-form'); form.reset();
+  recordOperation = undefined;
   form.elements.id.value = record?.id ?? '';
   form.elements.service_date.max = today();
   form.elements.service_date.value = record?.service_date ?? today();
@@ -77,6 +80,7 @@ function bindForm(id, submit) {
   $(id).addEventListener('submit', async event => {
     event.preventDefault();
     const form = event.target, button = form.querySelector('[type=submit]');
+    if (button.disabled) return;
     button.disabled = true;
     form.querySelector('.form-error').textContent = '';
     try {await submit(Object.fromEntries(new FormData(form))); form.closest('dialog').close();}
@@ -91,8 +95,27 @@ bindForm('vehicle-form', async body => {
 bindForm('record-form', async body => {
   body.vehicle_id = currentId;
   body.owner_confirmed = true; // Explicit Confirm & save form submission.
-  await api(body.id ? `/api/records/${body.id}` : '/api/records', body.id ? 'PUT' : 'POST', body);
-  await reload(); message('Record confirmed and saved. Reminders and spending have been updated.');
+  if (!body.id) {
+    const fields = JSON.stringify(body);
+    if (recordOperation?.fields !== fields) {
+      recordOperation = {fields, id: crypto.randomUUID()};
+    }
+    body.operation_id = recordOperation.id;
+  }
+  const path = body.id ? `/api/records/${body.id}` :
+    bundledDashboard ? '/api/records?include=dashboard' : '/api/records';
+  const result = await api(path, body.id ? 'PUT' : 'POST', body);
+  try {
+    if (result.dashboard && Number(body.vehicle_id) === currentId) {
+      data = result.dashboard;
+      render();
+    } else {
+      await reload();
+    }
+    message('Record confirmed and saved. Reminders and spending have been updated.');
+  } catch {
+    message('Record saved. Refresh the page to reload reminders and spending.', true);
+  }
 });
 bindForm('reminder-form', async body => {
   body.vehicle_id = currentId;

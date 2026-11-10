@@ -8,12 +8,23 @@ owners, extract receipts or call an external AI runtime.
 """
 
 import calendar
+import hashlib
+import json
+import re
 from datetime import date
 from decimal import Decimal
 
 # SR08 baseline distance is 500 international miles; records use kilometres.
 UPCOMING_DAYS = 30
 UPCOMING_DISTANCE_KM = Decimal('500') * Decimal('1.609344')
+
+
+class OperationConflict(ValueError):
+    """The same save token was reused for different record fields."""
+
+
+class OperationGone(LookupError):
+    """The confirmed record identified by a previous save was deleted."""
 
 
 def validate_and_route_owner_request(validated_owner_service_request, *,
@@ -39,9 +50,13 @@ def validate_and_route_owner_request(validated_owner_service_request, *,
     car_id = int(raw)
     if record_store.execute("SELECT id FROM vehicles WHERE id=?", (car_id,)).fetchone() is None:
         raise LookupError("Vehicle not found.")
+    key = validated_owner_service_request.get("operation_id")
+    if key is not None and (not isinstance(key, str) or not re.fullmatch(r"[A-Za-z0-9-]{16,80}", key)):
+        raise ValueError("operation_id must be 16 to 80 letters, digits or hyphens.")
     return {"operation": operation, "vehicle_id": car_id,
             "fields": field_validator(validated_owner_service_request),
-            "owner_confirmed": validated_owner_service_request.get("owner_confirmed") is True}
+            "owner_confirmed": validated_owner_service_request.get("owner_confirmed") is True,
+            "operation_id": key}
 
 
 def coordinate_ai_requests_and_responses(receipt_or_question_request, *,
@@ -71,11 +86,32 @@ def coordinate_confirmed_record_transaction(confirmed_transaction_request, *,
     if confirmed_transaction_request.get("owner_confirmed") is not True:
         raise ValueError("Explicit confirmation is required before saving a record.")
     request = confirmed_transaction_request
+    key = request.get("operation_id")
+    fingerprint = None
+    if key is not None:
+        encoded_fields = json.dumps(request["fields"], ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        fingerprint = hashlib.sha256(encoded_fields).hexdigest()
+        # Check and claim the key under the same writer lock as the record insert.
+        record_store.execute("BEGIN IMMEDIATE")
+        prior = record_store.execute(
+            "SELECT fingerprint, record_id, deleted FROM record_operations WHERE vehicle_id=? AND operation_id=?",
+            (request["vehicle_id"], key)).fetchone()
+        if prior is not None:
+            record_store.rollback()
+            if prior[0] != fingerprint:
+                raise OperationConflict("This save token already belongs to a different record.")
+            if prior[2]:
+                raise OperationGone("This save already completed and the record was later deleted.")
+            return {"id": prior[1]}
     cursor = record_store.execute(
         "INSERT INTO records(vehicle_id,service_date,service_item,category,mileage,cost_cents,provider,notes) "
         "VALUES(?,?,?,?,?,?,?,?)", (request["vehicle_id"], *request["fields"]))
     record_store.execute("UPDATE vehicles SET mileage=max(mileage,?) WHERE id=?",
                          (request["fields"][3], request["vehicle_id"]))
+    if key is not None:
+        record_store.execute(
+            "INSERT INTO record_operations(vehicle_id,operation_id,fingerprint,record_id) VALUES(?,?,?,?)",
+            (request["vehicle_id"], key, fingerprint, cursor.lastrowid))
     record_store.commit()
     return {"id": cursor.lastrowid}
 

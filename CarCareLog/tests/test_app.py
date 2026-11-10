@@ -1,10 +1,13 @@
 import importlib.util
 import json
+import sqlite3
 import tempfile
 import threading
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from pathlib import Path
+from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -50,11 +53,11 @@ class AppTests(unittest.TestCase):
         self.assertEqual(status, 201)
         return car["id"]
 
-    def record(self, car, **changes):
+    def record(self, car, *, path="/api/records", **changes):
         body = dict(vehicle_id=car, service_date=date.today().isoformat(), service_item="Oil change",
                     category="Maintenance", mileage=10000, cost="80.25", provider="Garage", notes="", owner_confirmed=True)
         body.update(changes)
-        return self.call("/api/records", "POST", body)
+        return self.call(path, "POST", body)
 
     def dashboard(self, car):
         status, data = self.call(f"/api/dashboard?vehicle_id={car}")
@@ -81,6 +84,51 @@ class AppTests(unittest.TestCase):
         self.assertEqual(self.dashboard(car)["total_cents"], 20)
         app.init_db()
         self.assertEqual(len(self.dashboard(car)["records"]), 1)
+
+    def test_concurrent_replay_of_confirmed_save_has_one_record(self):
+        car = self.car()
+        key = "repeat-save-test-key-0001"
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            a, b = pool.map(lambda _: self.record(car, operation_id=key, cost="89.99"), range(2))
+        self.assertEqual(a, b)
+        self.assertEqual(a[0], 201)
+        self.assertEqual(self.dashboard(car)["total_cents"], 8999)
+        self.assertEqual(self.record(car, operation_id=key, cost="90.00")[0], 409)
+        self.assertEqual(self.record(car, operation_id=key, owner_confirmed=False)[0], 400)
+        self.assertEqual(self.record(self.car("Other car"), operation_id=key)[0], 201)
+        self.assertEqual(len(self.dashboard(car)["records"]), 1)
+
+    def test_replaying_deleted_operation_does_not_recreate_it(self):
+        car = self.car()
+        key = "deleted-save-test-key-0001"
+        _, created = self.record(car, operation_id=key)
+        self.assertEqual(self.call(f'/api/records/{created["id"]}', "DELETE")[0], 200)
+        self.record(car, cost="1.00")
+        self.assertEqual(self.record(car, operation_id=key)[0], 410)
+        self.assertEqual(self.dashboard(car)["total_cents"], 100)
+
+    def test_bundled_dashboard_matches_separate_read(self):
+        car = self.car()
+        self.rule(car)
+        fields = dict(vehicle_id=car, service_date=date.today().isoformat(),
+                      service_item="Oil change", category="Maintenance", mileage=10000,
+                      cost="89.99", owner_confirmed=True)
+        status, saved = self.call("/api/records?include=dashboard", "POST", fields)
+        self.assertEqual(status, 201)
+        self.assertEqual(saved["dashboard"], self.dashboard(car))
+        self.assertEqual(saved["dashboard"]["reminders"][0]["record_id"], saved["id"])
+
+    def test_bundled_read_failure_preserves_confirmed_record(self):
+        car = self.car()
+        with patch.object(app.Handler, "measured_dashboard",
+                          side_effect=sqlite3.OperationalError("test read failure")):
+            status, saved = self.record(car, path="/api/records?include=dashboard",
+                                        operation_id="bundled-read-failure-001")
+
+        self.assertEqual(status, 201)
+        self.assertEqual(saved, {"id": saved["id"], "dashboard_unavailable": True})
+        records = self.dashboard(car)["records"]
+        self.assertEqual([record["id"] for record in records], [saved["id"]])
 
     def test_invalid_data_is_not_saved(self):
         car = self.car()

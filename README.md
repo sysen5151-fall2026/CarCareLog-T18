@@ -41,7 +41,11 @@ These are the four use cases in our model:
 
 The working path is: select a vehicle, enter and confirm a service record, save it, then review the updated history, expenses and reminders. This covers the manual-entry part of UC.1. The modeled receipt-to-AI-to-owner-confirmation path is not implemented yet.
 
-Requirement IDs and remaining work are recorded in [MVP scope](docs/MVP_SCOPE.md). For example, EN01 leads to SR01 and SR02, which concern record management and retrieval under UC.1. The forms and API operations in this repository exercise that part of the model. Full requirement acceptance has not been established by this prototype.
+Requirement IDs and remaining work are recorded in [MVP scope](CarCareLog/docs/MVP_SCOPE.md) and [model traceability](docs/traceability.md). For example, EN01 leads to SR01 and SR02, which concern record management and retrieval under UC.1. The forms and API operations in this repository exercise that part of the model. Full requirement acceptance has not been established by this prototype.
+
+## Chapter 10 modeling and simulation
+
+The default site uses scenario B, the three-exchange save and refresh flow. To try scenario A on the same prototype, open [http://localhost:8000/?save=bundled](http://localhost:8000/?save=bundled) and confirm a **new** manual record. The dashboard can return with the save confirmation after the write commits. The [Chapter 10 model and evidence map](docs/modeling-and-simulation.md) links both scenarios to the Innoslate diagrams, requirement IDs and tests. The recorded PMC2 and Friday walkthroughs use the historical baseline revision `5aca599`.
 
 ## Run the application
 
@@ -85,12 +89,11 @@ Optional settings are `CARCARE_PORT` (default: `8000`) and `CARCARE_DB` (databas
 
 | File | Purpose |
 | --- | --- |
-| `backend/app.py` | HTTP API, SQLite storage, reminder calculations and history lookup |
-| `frontend/index.html` | Page structure |
-| `frontend/styles.css` | Page styling |
-| `frontend/app.js` | Forms, API calls and dashboard updates |
-| `tests/test_app.py` | Backend and API checks |
-| `docs/MVP_SCOPE.md` | Requirement coverage and remaining work |
+| [`CarCareLog/backend/app.py`](CarCareLog/backend/app.py) | HTTP API, SQLite storage and scenario instrumentation |
+| [`CarCareLog/backend/function_f22.py`](CarCareLog/backend/function_f22.py) | F.2.2 routing, transaction and summary logic |
+| [`CarCareLog/frontend/app.js`](CarCareLog/frontend/app.js) | Forms, API calls and dashboard updates |
+| [`CarCareLog/tests/test_app.py`](CarCareLog/tests/test_app.py) | Backend, API and Chapter 10 regression checks |
+| [`contracts/api-v1.yaml`](contracts/api-v1.yaml) | Modeled internal adapters and local HTTP interface |
 
 ## Run the checks
 

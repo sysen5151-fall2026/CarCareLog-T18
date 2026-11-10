@@ -54,3 +54,7 @@ Release PMC2-UC2-20261103 retains UC.1 followed by UC.2. Three additional method
 - `test_UC2_repeated_save_keeps_one_rule_and_same_service_records`: repeated saves retain one rule and do not create maintenance events.
 
 The test observation date is 2026-11-03. Service interval examples remain 8,000 km / six months and temporary 1,000 km / one month. The SR08 warning remains 500 miles (804.672 km) OR 30 days; it is not the maintenance interval. See `docs/DEMO_RELEASE.md` and the packaged release manifest for exact commit and CI evidence. Native requirements remain Draft.
+
+## Chapter 10 comparison
+
+See the [Modeling and Simulation evidence map](modeling-and-simulation.md) for the UC.1 scenario A and B traces, performance observations and timing requirements. This experiment adds evidence for the manual workflow and leaves the modeled requirement statements and their acceptance status as recorded.
