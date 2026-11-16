@@ -10,16 +10,19 @@ import traceback
 from contextlib import closing, contextmanager
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
+from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from time import perf_counter
 from urllib.parse import parse_qs, urlsplit
 
 if __package__:
+    from .receipt_runtime import ReceiptRuntimeUnavailable, draft_receipt
     from .function_f22 import (add_months, validate_and_route_owner_request,
         coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders,
         coordinate_ai_requests_and_responses, OperationConflict, OperationGone)
 else:
+    from receipt_runtime import ReceiptRuntimeUnavailable, draft_receipt
     from function_f22 import (add_months, validate_and_route_owner_request,
         coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders,
         coordinate_ai_requests_and_responses, OperationConflict, OperationGone)
@@ -250,14 +253,21 @@ class Handler(BaseHTTPRequestHandler):
                     vehicle(db,car_id)
                     if body.get('kind') not in ('receipt','question'):
                         raise ValueError('AI request kind must be receipt or question.')
+                    model = os.environ.get('CARCARE_OLLAMA_MODEL', '').strip()
+                    drafter = None
+                    if model and body['kind'] == 'receipt':
+                        body['receipt_text'] = text_field(body, 'receipt_text', limit=4000)
+                        drafter = partial(draft_receipt, model=model)
                     try:
-                        coordinate_ai_requests_and_responses(body,
-                            configured_ai_service_contract_limits={'enabled':False},
-                            authorized_records_and_source_references=all_records(db,car_id))
-                    except NotImplementedError:
+                        proposal = coordinate_ai_requests_and_responses(body,
+                            configured_ai_service_contract_limits={'receipt_drafter': drafter},
+                            authorized_records_and_source_references=())
+                        record_fields(proposal)
+                    except (NotImplementedError, ReceiptRuntimeUnavailable, ValueError):
                         return self.reply({'status':'unavailable', 'vehicle_id':car_id,
-                            'proposal':None, 'message':'External AI is not implemented; use manual entry.'},503)
-                    raise RuntimeError('An unreviewed AI implementation returned unexpectedly.')
+                            'proposal':None, 'message':'AI draft unavailable. Use manual entry.'},503)
+                    return self.reply({'status':'needs_review', 'vehicle_id':car_id,
+                        'proposal':proposal, 'owner_confirmed':False})
             if path == "/api/vehicles":
                 if self.command == "GET":
                     with self.measure("store_vehicle_list"):

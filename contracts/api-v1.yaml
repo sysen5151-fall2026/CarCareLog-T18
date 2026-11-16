@@ -311,14 +311,31 @@
     "/internal/v1/coordinate-ai": {
       "post": {
         "operationId": "coordinateAIRequest",
-        "summary": "Explicit unavailable boundary; no external runtime or successful AI output",
+        "summary": "Request an unconfirmed receipt text draft from the configured loopback runtime",
         "x-function-id": "F.2.2.2",
         "x-decomposes": "F.2.2",
         "x-internal": true,
-        "x-implementation-status": "unavailable-only; external AI remains planned",
+        "x-implementation-status": "optional local receipt text draft; manual fallback; question generation remains unavailable",
         "responses": {
+          "200": {
+            "description": "A read-only receipt proposal for owner review. No record was created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["status", "vehicle_id", "proposal", "owner_confirmed"],
+                  "properties": {
+                    "status": {"type": "string", "enum": ["needs_review"]},
+                    "vehicle_id": {"type": "integer"},
+                    "proposal": {"type": "object"},
+                    "owner_confirmed": {"type": "boolean", "enum": [false]}
+                  }
+                }
+              }
+            }
+          },
           "503": {
-            "description": "External AI unimplemented. No proposal is stored; manual path remains available.",
+            "description": "Runtime disabled, unavailable, timed out, or returned an unusable draft. Manual entry remains available.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1272,6 +1289,11 @@
           },
           "receipt_reference": {
             "type": "string"
+          },
+          "receipt_text": {
+            "type": "string",
+            "maxLength": 4000,
+            "description": "Required for receipt drafts when the local runtime is enabled. Plain text only."
           }
         }
       },
@@ -1296,7 +1318,7 @@
           "proposal": {
             "type": "object",
             "nullable": true,
-            "description": "Always null in current implementation"
+            "description": "Always null on the unavailable response."
           },
           "message": {
             "type": "string"

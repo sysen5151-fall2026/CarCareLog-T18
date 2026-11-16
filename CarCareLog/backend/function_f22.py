@@ -3,8 +3,8 @@
 ICOM boundary: validated owner requests, returned records and AI outcomes are
 inputs; owner policy, AI limits and referenced interval rules are controls;
 confirmed writes, queries and prepared vehicle information are outputs.
-This local prototype implements the manual-record path. It does not authenticate
-owners, extract receipts or call an external AI runtime.
+This local prototype implements the manual-record path and can request an
+unconfirmed draft from an opt-in local runtime.
 """
 
 import calendar
@@ -62,13 +62,11 @@ def validate_and_route_owner_request(validated_owner_service_request, *,
 def coordinate_ai_requests_and_responses(receipt_or_question_request, *,
                                         configured_ai_service_contract_limits,
                                         authorized_records_and_source_references):
-    """F.2.2.2 / C.2.2: reserved external-AI boundary, not implemented.
-
-    Inputs and controls follow the modeled AI/evidence boundary. This function
-    deliberately raises rather than fabricating an extraction or AI response.
-    The implemented manual path does not depend on this boundary.
-    """
-    raise NotImplementedError("External AI coordination remains planned.")
+    """F.2.2.2 / C.2.2: request a draft through the configured receipt adapter."""
+    drafter = configured_ai_service_contract_limits.get("receipt_drafter")
+    if drafter is None or receipt_or_question_request.get("kind") != "receipt":
+        raise NotImplementedError("This AI operation is unavailable.")
+    return drafter(receipt_or_question_request["receipt_text"])
 
 
 def coordinate_confirmed_record_transaction(confirmed_transaction_request, *,
