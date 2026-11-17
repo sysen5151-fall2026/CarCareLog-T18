@@ -1,6 +1,6 @@
 # Product entry point to use case audit
 
-Revision: 3 November 2026. Covers every registered HTTP operation and user-triggered product entry, including internal adapters and justified development entries. UC IDs and names come from the native T18 model. Alternatives describe prototype paths, not new model entities.
+Revision: 17 November 2026. Covers registered HTTP operations and user-triggered product entries, including the optional receipt-text adapter. UC IDs and names come from the native T18 model.
 
 | Product entry | HTTP operation | Use case | Function | Handler | Status |
 |---|---|---|---|---|---|
@@ -16,11 +16,11 @@ Revision: 3 November 2026. Covers every registered HTTP operation and user-trigg
 | Remove reminder rule | DELETE /api/reminders/{id} | UC.2 configuration alternative | F.2.2.4 | app.py reminder removal | Implemented |
 | Export selected records | GET /api/export?vehicle_id={id} | UC.1 export alternative | F.2.2.4; F.2.1 | csv_export | Implemented selected-vehicle CSV |
 | Ask total / last oil question | GET /api/answer?vehicle_id={id}&question=total or oil | UC.4 Ask Questions About Vehicle Records | F.2.2.4; F.2.1 | app.py recorded-data lookup | Implemented deterministic subset; no generative AI |
-| Receipt upload / generative question | No successful external-AI route | UC.1 receipt-assisted path; UC.4 generative alternative | F.2.2.2 | coordinate_ai_requests_and_responses | Planned; contract adapter returns unavailable |
+| Browser receipt upload / generative question | No browser or hosted route | UC.1 receipt-assisted path; UC.4 generative alternative | F.2.2.2 | Pending | Browser receipt review, OCR, and general AI questions remain open |
 | Internal routing contract | POST /internal/v1/validate-and-route | UC.1 internal processing | F.2.2.1 | validate_and_route_owner_request | Implemented localhost adapter, no standalone UI |
 | Internal confirmed transaction | POST /internal/v1/confirmed-transaction | UC.1 internal processing | F.2.2.3 | coordinate_confirmed_record_transaction | Implemented localhost adapter |
 | Internal prepared information | POST /internal/v1/prepare-information | UC.1; UC.2; UC.3 internal processing | F.2.2.4 | calculate_maintenance_summary_and_reminders | Implemented localhost adapter |
-| Internal external-AI boundary | POST /internal/v1/coordinate-ai | UC.1 / UC.4 planned AI processing | F.2.2.2 | coordinate_ai_requests_and_responses | 503 unavailable only; no successful extraction |
+| Internal AI boundary | POST /internal/v1/coordinate-ai | UC.1 receipt-text pilot; UC.4 general questions remain open | F.2.2.2 | coordinate_ai_requests_and_responses and receipt_runtime.py | Optional local Ollama draft for UC.1; HTTP 503 without the runtime, no automatic write |
 | Static application files | GET /; GET /app.js; GET /styles.css | All UI entry points above | F.2.1 | frontend/index.html, app.js, styles.css | Presentation assets, not separate use cases |
 
 The application has no vehicle-delete or health endpoint. Unknown paths return 404. Local owner-confirmation flags are workflow controls, not authentication. All internal endpoints use the same localhost Host/Origin guard as product endpoints.

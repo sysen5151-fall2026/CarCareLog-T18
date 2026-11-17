@@ -6,7 +6,7 @@ This prototype implements the core manual workflow in the team's stakeholder req
 | --- | --- | --- |
 | SR01 | Implemented | Add/edit/delete selected-vehicle records. API lifecycle test. |
 | SR02 | Implemented for core workflow | Current mileage and descending service timeline; client-side service/provider search and date-range filters. |
-| SR03–SR05 | Pending | Receipt upload, AI field proposal, explicit draft confirmation and timed usability study. Manual saving does require confirmation. |
+| SR03–SR05 | Partial | Optional backend receipt-text draft and confirmation boundary have fixture coverage. Browser receipt upload, draft review, real-model validation, and timed usability remain open. |
 | SR06 | Partial | User supplies the manual reference for each interval. The app does not verify or retrieve that reference. |
 | SR07–SR08 | Implemented | Recompute on mileage changes and record add/edit/delete. Mileage/time due and upcoming states tested. |
 | SR09 | Implemented | Exact-cent total and monthly costs split by Maintenance/Repair category. |
@@ -14,9 +14,9 @@ This prototype implements the core manual workflow in the team's stakeholder req
 | SR12 | Implemented | CSV exports all confirmed records for the selected vehicle; Unicode and spreadsheet formula escaping tested. |
 | SR13 | Pending | Local loopback server only. No accounts, owner authorization or multi-user access control. |
 | SR14 | Pending | No seven-day availability measurement has been performed. |
-| SR15 | Supported | All core record operations work without any AI dependency. AI outage behavior awaits an actual AI integration. |
-| SR16 | Initial coverage | Repeatable API checks cover CRUD, reminders, expenses, exports and fixed grounded lookup. Future AI workflows need additional regression tests. |
-| SR17 | Pending | No external AI requests are made by this version. |
+| SR15 | Supported | Core record operations run independently of AI. A controlled timeout test verifies that the ledger remains unchanged and manual saving still works. |
+| SR16 | Initial coverage | Repeatable checks cover CRUD, reminders, expenses, exports, fixed grounded lookup, and the local receipt adapter. Real-model evaluation remains open. |
+| SR17 | Partial | The receipt adapter targets local loopback. Hosted AI and validation of a production data-handling policy remain open. |
 | SR18 | Pending | Stop-and-copy backup instructions exist; automated 24-hour recovery guarantees are not implemented. |
 
 ## Demo flow

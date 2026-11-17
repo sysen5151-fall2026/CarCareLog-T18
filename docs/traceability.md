@@ -41,7 +41,7 @@ All 22 populated ASR leaves are listed. A test name records selected evidence, n
 
 Inputs: validated owner service request, selected-vehicle stored records and stored confirmation. Controls: confirmation policy, operation configuration and referenced interval rules. Outputs: confirmed service record, committed ID and prepared vehicle information. Mechanisms: C.2.1-C.2.4 responsibilities in one Python process; C.3 SQLite.
 
-`contracts/api-v1.yaml` exposes four internal contract adapters with function IDs and decomposition tags. They invoke the existing functions; external AI returns HTTP 503 and stores no proposal. Internal DTOs are revalidated before persistence. No public deployment or owner authentication is claimed.
+`contracts/api-v1.yaml` exposes four internal contract adapters with function IDs and decomposition tags. The 3 November tests in the table above cover the original unavailable boundary. The Chapter 11–12 increment adds an optional local receipt-text adapter to F.2.2.2. See [ADR 011](adr-011-receipt-runtime.md) and [the product risk register](risks.md) for the additional draft-only and R2 timeout tests. Internal DTOs are revalidated before persistence. Public deployment, owner authentication, and real-model acceptance remain open.
 
 Native ASR/CRS/FCS allocations remain unchanged. The test docstrings quote their native requirement statements; scope notes limit the claim to the behavior actually exercised.
 
