@@ -25,6 +25,8 @@ CARCARE_DB="$(mktemp)" CARCARE_OLLAMA_MODEL= python3 CarCareLog/backend/app.py
 
 Open [http://127.0.0.1:8000](http://127.0.0.1:8000), select **Load demo data**, and choose the demo vehicle. Open **Add record**, enter an oil change with today's date and the vehicle's current odometer reading, and enter **89.99 USD**. Select **Confirm & save** once. Check that the timeline gains one row and the total increases by 89.99 USD, then refresh the page and show the saved row again. Use a fresh demo database for each rehearsal or round. Stop the server with Ctrl+C.
 
+To show the AI-timeout fallback, open a second terminal in `CarCareLog/` and run `py -3 -m unittest discover -s tests -p test_receipt_runtime.py -v` (`python3` on macOS or Linux). It takes about two seconds. The R2 test makes a controlled runtime time out, then confirms that the stored ledger is unchanged and that a manual save still succeeds.
+
 For a persistent local workspace, omit the temporary database override. Keep real vehicle records and secrets off the shared screen. If port 8000 is in use, set `CARCARE_PORT` to a free port and open that port in the browser.
 
 ## OpsCon and as-built system
@@ -34,9 +36,9 @@ Open [T18 Universe Context](https://cloud.innoslate.com/cornell/p/746/diagrams/a
 | OpsCon asset | Status | Location in this build |
 | --- | --- | --- |
 | Ext.1 Vehicle Owner | Working | [Web interface](CarCareLog/frontend/index.html) and [browser interactions](CarCareLog/frontend/app.js) support the manual owner workflow. |
-| C.0 CarCareLog System | Partial | C.1 is the browser UI. C.2 uses the [HTTP service](CarCareLog/backend/app.py) and [F.2.2 coordination](CarCareLog/backend/function_f22.py). C.3 uses SQLite through the backend. The core manual path works. Owner authentication and full AI integration remain open. |
-| Ext.2 AI Model Runtime | Partial | The [receipt-text adapter](CarCareLog/backend/receipt_runtime.py) can call a configured local Ollama runtime. A local test double verifies draft handling and the timeout fallback. Browser receipt entry, a pinned real model, real-model validation, and hosted integration remain open. |
-| Ext.3 Application Operator | Not yet built | The operator can start and stop the prototype manually. A dedicated operator interface and automated recovery are pending. |
+| C.0 CarCareLog System | Partial | C.1 is the browser UI. C.2 uses the [HTTP service](CarCareLog/backend/app.py) and [F.2.2 coordination](CarCareLog/backend/function_f22.py). C.3 is the SQLite store written by `app.py` (default file `CarCareLog/data/carcare.db`; the demo uses a temporary file). The core manual path works. Owner authentication and full AI integration remain open. |
+| Ext.2 AI Model Runtime | Partial | The [receipt-text adapter](CarCareLog/backend/receipt_runtime.py) can call a configured local Ollama runtime. A local test double in [the receipt-runtime tests](CarCareLog/tests/test_receipt_runtime.py) verifies draft handling and the timeout fallback. Browser receipt entry, a pinned real model, real-model validation, and hosted integration remain open. |
+| Ext.3 Application Operator | Not yet built | No operator code exists yet. The operator can start and stop the prototype manually from a terminal. A dedicated operator interface and automated recovery are pending. |
 
 The service provider supplies receipts to the owner outside the application. There is no direct service-provider integration.
 
@@ -53,7 +55,7 @@ The service provider supplies receipts to the owner outside the application. The
 
 [ADR 011](docs/adr-011-receipt-runtime.md) records the choice of SA.A, the local Ollama adapter, for the opt-in receipt-text pilot. SA.B uses GPT-6.1 Sol in the hosted cost comparison. The prototype does not use that hosted service. The [risk register](docs/risks.md) links to the native Innoslate matrix. The R2 timeout test confirms an unavailable response, an unchanged ledger, and a successful manual save. A separate fixture checks that even a well-formed but erroneous draft requires owner confirmation.
 
-Next steps are to pin and validate a real local model using labeled sample receipts, integrate the draft review screen, and reproduce the build on a clean machine. Owner sign-in, data isolation, and operator recovery remain separate implementation tasks.
+Next steps are to pin and validate a real local model using labeled sample receipts, integrate the draft review screen, and reproduce the build on a clean machine. Owner sign-in, data isolation, and operator recovery remain separate implementation tasks. Open items are tracked in [GitHub Issues](https://github.com/sysen5151-fall2026/CarCareLog-T18/issues).
 
 ## Tests and related files
 

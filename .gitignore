@@ -1,0 +1,19 @@
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Local environments and secrets
+.venv/
+venv/
+.env
+.env.*
+
+# SQLite side files and local benchmark output
+*.db-journal
+*.db-wal
+*.db-shm
+chapter10-bench/
+
+# OS files
+.DS_Store
+Thumbs.db
