@@ -1,6 +1,6 @@
 # ADR 011 Receipt Text Runtime
 
-**Status:** Selected for the opt-in pilot on the Chapter 11–12 branch. The provider acceptance benchmark and remote merge remain open.
+**Status:** Selected for the opt-in pilot and merged to `main`. A pinned real local model and the provider acceptance benchmark remain open.
 
 The decision concerns where the receipt-text model executes for UC.1 and F.2.2.2. Both options produce an unconfirmed draft for review and leave the C.3 write boundary behind explicit owner confirmation. [Native alternatives](https://cloud.innoslate.com/cornell/p/746/diagrams/asset/318544).
 
