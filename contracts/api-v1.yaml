@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "CarCareLog local prototype contract",
-    "version": "0.3.0",
-    "description": "Internal HTTP adapters expose the modeled in-process functions. The public local record endpoint supports the Chapter 10 baseline and opt-in bundled response."
+    "version": "0.4.0",
+    "description": "Internal HTTP adapters expose the modeled in-process functions. The public local record endpoint supports the Chapter 10 baseline and opt-in bundled response. Lab 13 adds the browser receipt-draft route, which calls the pinned local model and returns a checked draft for owner review."
   },
   "servers": [
     {
@@ -31,7 +31,9 @@
             "description": "Opt in to Chapter 10 scenario A. Omitting this parameter selects scenario B.",
             "schema": {
               "type": "string",
-              "enum": ["dashboard"]
+              "enum": [
+                "dashboard"
+              ]
             }
           }
         ],
@@ -150,6 +152,90 @@
             }
           }
         ]
+      }
+    },
+    "/api/receipt-draft": {
+      "post": {
+        "operationId": "draftRecordFromReceiptText",
+        "summary": "Draft a service record from pasted receipt text with the pinned local model",
+        "x-function-id": "F.2.2.2",
+        "x-decomposes": "F.2.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local; browser Add record dialog, Draft with local AI",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptDraftRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A checked draft for owner review. No record was created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptDraft"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input, for example empty or over-long receipt text",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Selected vehicle does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "AI drafting is off, or the runtime is unavailable, timed out, or returned an unusable draft. Manual entry remains available.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIUnavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/receipt-assist": {
+      "get": {
+        "operationId": "getReceiptAssistStatus",
+        "summary": "Tell the page whether AI drafting is configured, and provide the sample receipt",
+        "x-function-id": "F.2.2.2",
+        "x-decomposes": "F.2.2",
+        "x-internal": false,
+        "x-implementation-status": "implemented-local",
+        "responses": {
+          "200": {
+            "description": "Configuration only; the runtime is not contacted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptAssistStatus"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/internal/v1/validate-and-route": {
@@ -315,21 +401,14 @@
         "x-function-id": "F.2.2.2",
         "x-decomposes": "F.2.2",
         "x-internal": true,
-        "x-implementation-status": "optional local receipt text draft; manual fallback; question generation remains unavailable",
+        "x-implementation-status": "local receipt text draft with F.2.2.2 checks; manual fallback; question generation remains unavailable",
         "responses": {
           "200": {
-            "description": "A read-only receipt proposal for owner review. No record was created.",
+            "description": "A checked receipt draft for owner review. No record was created.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": ["status", "vehicle_id", "proposal", "owner_confirmed"],
-                  "properties": {
-                    "status": {"type": "string", "enum": ["needs_review"]},
-                    "vehicle_id": {"type": "integer"},
-                    "proposal": {"type": "object"},
-                    "owner_confirmed": {"type": "boolean", "enum": [false]}
-                  }
+                  "$ref": "#/components/schemas/ReceiptDraft"
                 }
               }
             }
@@ -1147,7 +1226,9 @@
               },
               "dashboard_unavailable": {
                 "type": "boolean",
-                "enum": [true],
+                "enum": [
+                  true
+                ],
                 "description": "The write committed but the optional dashboard read failed. Refresh the dashboard separately."
               }
             }
@@ -1301,6 +1382,7 @@
         "type": "object",
         "required": [
           "status",
+          "reason",
           "vehicle_id",
           "proposal",
           "message"
@@ -1322,6 +1404,14 @@
           },
           "message": {
             "type": "string"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "not_configured",
+              "runtime_unavailable"
+            ],
+            "description": "not_configured: CARCARE_OLLAMA_MODEL is unset. runtime_unavailable: the runtime was unreachable, timed out, or returned an unusable draft."
           }
         }
       },
@@ -1422,6 +1512,193 @@
             }
           }
         ]
+      },
+      "ReceiptDraftRequest": {
+        "type": "object",
+        "required": [
+          "vehicle_id",
+          "receipt_text"
+        ],
+        "properties": {
+          "vehicle_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "receipt_text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "description": "Pasted receipt text. Plain text only; sent to the local model as data."
+          }
+        }
+      },
+      "FieldEvidence": {
+        "type": "object",
+        "required": [
+          "status",
+          "note"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "found",
+              "check",
+              "missing"
+            ],
+            "description": "found: printed on the receipt; check: the owner must verify it; missing: no usable value."
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "ReceiptDraft": {
+        "type": "object",
+        "required": [
+          "status",
+          "vehicle_id",
+          "owner_confirmed",
+          "proposal",
+          "evidence",
+          "model",
+          "elapsed_ms"
+        ],
+        "description": "A checked, unconfirmed draft. No record was created. Saving requires POST /api/records with owner_confirmed true.",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "needs_review"
+            ]
+          },
+          "vehicle_id": {
+            "type": "integer"
+          },
+          "owner_confirmed": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "proposal": {
+            "type": "object",
+            "required": [
+              "service_date",
+              "service_item",
+              "category",
+              "mileage",
+              "cost",
+              "provider"
+            ],
+            "properties": {
+              "service_date": {
+                "type": "string",
+                "nullable": true,
+                "format": "date"
+              },
+              "service_item": {
+                "type": "string",
+                "nullable": true,
+                "enum": [
+                  "Oil change",
+                  "Tire rotation",
+                  "Brake service",
+                  "Inspection",
+                  "Battery",
+                  "Other",
+                  null
+                ]
+              },
+              "category": {
+                "type": "string",
+                "nullable": true,
+                "enum": [
+                  "Maintenance",
+                  "Repair",
+                  null
+                ]
+              },
+              "mileage": {
+                "type": "integer",
+                "nullable": true,
+                "minimum": 0,
+                "description": "Whole kilometers. Miles on the receipt are converted by the application, not the model."
+              },
+              "cost": {
+                "type": "string",
+                "nullable": true,
+                "pattern": "^\\d+\\.\\d{2}$",
+                "description": "USD final total."
+              },
+              "provider": {
+                "type": "string",
+                "nullable": true,
+                "maxLength": 120
+              }
+            }
+          },
+          "evidence": {
+            "type": "object",
+            "required": [
+              "service_date",
+              "service_item",
+              "category",
+              "mileage",
+              "cost",
+              "provider"
+            ],
+            "properties": {
+              "service_date": {
+                "$ref": "#/components/schemas/FieldEvidence"
+              },
+              "service_item": {
+                "$ref": "#/components/schemas/FieldEvidence"
+              },
+              "category": {
+                "$ref": "#/components/schemas/FieldEvidence"
+              },
+              "mileage": {
+                "$ref": "#/components/schemas/FieldEvidence"
+              },
+              "cost": {
+                "$ref": "#/components/schemas/FieldEvidence"
+              },
+              "provider": {
+                "$ref": "#/components/schemas/FieldEvidence"
+              }
+            }
+          },
+          "model": {
+            "type": "string",
+            "description": "Model tag that produced the draft, from CARCARE_OLLAMA_MODEL."
+          },
+          "elapsed_ms": {
+            "type": "integer",
+            "description": "Service-side time for the model call and checks."
+          }
+        }
+      },
+      "ReceiptAssistStatus": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "model",
+          "sample"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "sample": {
+            "type": "string",
+            "description": "Synthetic demonstration receipt text."
+          }
+        }
       }
     }
   },
