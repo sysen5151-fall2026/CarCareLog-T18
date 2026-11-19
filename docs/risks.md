@@ -24,9 +24,9 @@ R2 is the top pilot risk because it has the highest impact at the shared likelih
 
 ## Response, monitoring and control
 
-The owner column records the proposed team assignments. Review the evidence at integration, after changes affecting the risk and before release. Record new findings and actions in the linked risk entity, then review the rating and matrix cell together.
+The owner column lists the team member responsible for each risk. Review the evidence at integration, after changes affecting the risk and before release. Record new findings and actions in the linked risk entity, then review the rating and matrix cell together.
 
-| Risk | Strategy and response | Monitoring and trigger | Proposed owner | Status |
+| Risk | Strategy and response | Monitoring and trigger | Risk owner | Status |
 | --- | --- | --- | --- | --- |
 | R2 | **Mitigate.** On runtime failure, return HTTP 503 with no draft and leave the manual form available. The default transport timeout is 60 seconds. | Track latency, timeout count and manual fallback success. Any changed ledger row, unexpected response or failed manual save blocks release. | Zeyu Zhang | Open. [Timeout regression](../CarCareLog/tests/test_receipt_runtime.py) and [smoke test](../CarCareLog/tools/smoke_test.py) cover the fallback. |
 | R1 | **Mitigate.** F.2.2.2 checks each drafted value against receipt text and marks values needing review. The owner confirms before any write. | Review wrong values and which receive flags in each labeled run or model change. An unconfirmed write blocks release. Investigate any wrong value shown as found. | Zhihao Chen | Open. [Review tests](../CarCareLog/tests/test_receipt_review.py) cover the checks. |
