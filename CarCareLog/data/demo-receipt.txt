@@ -1,0 +1,11 @@
+QuickLube Express
+1450 Route 13, Ithaca NY
+Invoice #10442    Date: 11/16/2026
+Vehicle: 2020 Toyota Corolla   Odometer In: 32,311 mi
+Full synthetic oil change (5 qt)      69.99
+Oil filter                             9.99
+Shop supplies                          3.34
+Subtotal                              83.32
+Sales tax 8%                           6.67
+TOTAL                                $89.99
+Paid: VISA ****1234

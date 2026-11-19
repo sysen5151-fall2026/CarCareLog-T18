@@ -31,6 +31,7 @@ LOCAL_POLICY = {"mode": "local_demo", "require_confirmation": True}
 
 ROOT = Path(__file__).resolve().parents[1]
 DB_PATH = Path(os.environ.get("CARCARE_DB", ROOT / "data" / "carcare.db"))
+DEMO_RECEIPT = ROOT / "data" / "demo-receipt.txt"
 SERVICES = ["Oil change", "Tire rotation", "Brake service", "Inspection", "Battery", "Other"]
 
 
@@ -206,6 +207,31 @@ class Handler(BaseHTTPRequestHandler):
             raise ValueError("Request body must be a JSON object.")
         return body
 
+    def receipt_draft(self, db, body):
+        """UC.1 receipt-assisted entry: F.2.2.2 draft for owner review. Never writes a record."""
+        car_id = integer(body, 'vehicle_id', minimum=1)
+        vehicle(db, car_id)
+        model = os.environ.get('CARCARE_OLLAMA_MODEL', '').strip()
+        drafter = None
+        if model and body['kind'] == 'receipt':
+            body['receipt_text'] = text_field(body, 'receipt_text', limit=4000)
+            drafter = partial(draft_receipt, model=model)
+        started = perf_counter()
+        try:
+            reviewed = coordinate_ai_requests_and_responses(body,
+                configured_ai_service_contract_limits={'receipt_drafter': drafter, 'services': SERVICES},
+                authorized_records_and_source_references=())
+        except NotImplementedError:
+            return self.reply({'status': 'unavailable', 'reason': 'not_configured', 'vehicle_id': car_id,
+                'proposal': None, 'message': 'AI drafting is off. Start the local model as the README describes, '
+                'or enter the record manually.'}, 503)
+        except (ReceiptRuntimeUnavailable, ValueError):
+            return self.reply({'status': 'unavailable', 'reason': 'runtime_unavailable', 'vehicle_id': car_id,
+                'proposal': None, 'message': 'AI draft unavailable. Use manual entry.'}, 503)
+        return self.reply({'status': 'needs_review', 'vehicle_id': car_id, 'owner_confirmed': False,
+            'proposal': reviewed['proposal'], 'evidence': reviewed['evidence'], 'model': model,
+            'elapsed_ms': round((perf_counter() - started) * 1000)})
+
     def dispatch(self):
         # The demo is local-only. Reject remote Host/Origin values and avoid exposing the DB.
         host = self.headers.get("Host", "")
@@ -249,25 +275,15 @@ class Handler(BaseHTTPRequestHandler):
                 if path == '/internal/v1/prepare-information':
                     return self.reply(dashboard(db, integer(body,'vehicle_id',minimum=1)))
                 if path == '/internal/v1/coordinate-ai':
-                    car_id = integer(body, 'vehicle_id', minimum=1)
-                    vehicle(db,car_id)
                     if body.get('kind') not in ('receipt','question'):
                         raise ValueError('AI request kind must be receipt or question.')
-                    model = os.environ.get('CARCARE_OLLAMA_MODEL', '').strip()
-                    drafter = None
-                    if model and body['kind'] == 'receipt':
-                        body['receipt_text'] = text_field(body, 'receipt_text', limit=4000)
-                        drafter = partial(draft_receipt, model=model)
-                    try:
-                        proposal = coordinate_ai_requests_and_responses(body,
-                            configured_ai_service_contract_limits={'receipt_drafter': drafter},
-                            authorized_records_and_source_references=())
-                        record_fields(proposal)
-                    except (NotImplementedError, ReceiptRuntimeUnavailable, ValueError):
-                        return self.reply({'status':'unavailable', 'vehicle_id':car_id,
-                            'proposal':None, 'message':'AI draft unavailable. Use manual entry.'},503)
-                    return self.reply({'status':'needs_review', 'vehicle_id':car_id,
-                        'proposal':proposal, 'owner_confirmed':False})
+                    return self.receipt_draft(db, body)
+            if path == "/api/receipt-draft" and self.command == "POST":
+                return self.receipt_draft(db, {**body, "kind": "receipt"})
+            if path == "/api/receipt-assist" and self.command == "GET":
+                model = os.environ.get("CARCARE_OLLAMA_MODEL", "").strip()
+                return self.reply({"enabled": bool(model), "model": model or None,
+                                   "sample": DEMO_RECEIPT.read_text(encoding="utf-8")})
             if path == "/api/vehicles":
                 if self.command == "GET":
                     with self.measure("store_vehicle_list"):

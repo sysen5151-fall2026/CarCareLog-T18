@@ -69,6 +69,7 @@ function editRecord(record) {
   form.elements.cost.value = record ? (record.cost_cents / 100).toFixed(2) : '';
   for (const field of ['service_item','category','provider','notes']) if (record) form.elements[field].value = record[field];
   $('record-title').textContent = record ? 'Edit service record' : 'Add service record';
+  resetDraft(!record);
   openDialog('record-dialog');
 }
 function editReminder(rule) {
@@ -76,6 +77,77 @@ function editReminder(rule) {
   if (rule) for (const field of ['service_item','interval_km','interval_months','reference']) form.elements[field].value = rule[field];
   openDialog('reminder-dialog');
 }
+// Receipt draft (ASR 1.1.6 / 1.2.2): the local model proposes values, F.2.2.2 checks them
+// against the receipt text, and the owner reviews every field before Confirm & save.
+const draftFields = ['service_date', 'mileage', 'service_item', 'category', 'cost', 'provider'];
+const fieldLabels = {service_date: 'service date', mileage: 'mileage', service_item: 'service item', category: 'category', cost: 'cost', provider: 'provider'};
+let assist = {enabled: false, model: null, sample: ''}, draftTimer;
+function setNote(field, status, text) {
+  const note = document.querySelector(`[data-note="${field}"]`), input = $('record-form').elements[field];
+  note.textContent = text; note.className = 'field-note' + (status ? ' ' + status : '');
+  input.classList.toggle('needs-check', status === 'check');
+  input.classList.toggle('needs-entry', status === 'missing');
+}
+function resetDraft(show) {
+  clearInterval(draftTimer);
+  $('receipt-assist').hidden = !show;
+  $('receipt-assist').open = false;
+  $('receipt-text').value = '';
+  $('draft-status').textContent = '';
+  $('draft-status').className = 'draft-status';
+  $('draft-banner').hidden = true;
+  $('draft-receipt').disabled = !assist.enabled;
+  for (const field of draftFields) setNote(field, '', '');
+}
+function applyDraft(result) {
+  const form = $('record-form');
+  for (const field of draftFields) {
+    const value = result.proposal[field], evidence = result.evidence[field];
+    form.elements[field].value = value ?? '';
+    const label = {found: '✓ ', check: 'Check: ', missing: 'Missing: '}[evidence.status];
+    setNote(field, evidence.status, label + evidence.note);
+  }
+  if (!form.elements.notes.value) form.elements.notes.value = `Drafted from receipt text by local AI (${result.model}); reviewed by owner.`;
+  const flagged = draftFields.filter(f => result.evidence[f].status !== 'found');
+  $('draft-banner').textContent = `AI draft, not saved yet. ${flagged.length ? `Check ${flagged.length} highlighted field${flagged.length > 1 ? 's' : ''} (${flagged.map(f => fieldLabels[f]).join(', ')}), ` : 'Check every field, '}then select Confirm & save.`;
+  $('draft-banner').hidden = false;
+}
+async function draftReceipt() {
+  const text = $('receipt-text').value.trim();
+  if (!text) { $('draft-status').textContent = 'Paste receipt text first.'; $('draft-status').className = 'draft-status error'; return; }
+  const started = Date.now(), button = $('draft-receipt');
+  button.disabled = true;
+  $('draft-status').className = 'draft-status';
+  const tick = () => { $('draft-status').textContent = `Drafting on this computer with ${assist.model}… ${Math.round((Date.now() - started) / 1000)} s (the first draft loads the model and can take longer)`; };
+  tick(); draftTimer = setInterval(tick, 1000);
+  try {
+    const response = await fetch('/api/receipt-draft', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({vehicle_id: currentId, receipt_text: text})});
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || result.error || 'AI draft unavailable. Use manual entry.');
+    applyDraft(result);
+    $('draft-status').textContent = `Draft ready in ${(result.elapsed_ms / 1000).toFixed(1)} s from ${result.model}. Review the fields below.`;
+  } catch (error) {
+    $('draft-status').textContent = `${error.message} Your form is unchanged, and you can still enter and save the record yourself.`;
+    $('draft-status').className = 'draft-status error';
+  } finally {
+    clearInterval(draftTimer);
+    button.disabled = !assist.enabled;
+  }
+}
+async function loadAssist() {
+  try { assist = await api('/api/receipt-assist'); } catch { assist = {enabled: false, model: null, sample: ''}; }
+  $('assist-tag').textContent = assist.enabled ? 'Local AI' : 'Local AI off';
+  $('assist-tag').className = 'tag' + (assist.enabled ? '' : ' off');
+  if (!assist.enabled) $('assist-help').textContent = 'AI drafting is off. Start the local model as the README describes, or enter the record yourself below.';
+  $('draft-receipt').disabled = !assist.enabled;
+  $('sample-receipt').hidden = !assist.sample;
+}
+$('draft-receipt').onclick = draftReceipt;
+$('sample-receipt').onclick = () => { $('receipt-text').value = assist.sample; $('receipt-text').focus(); };
+$('record-form').addEventListener('input', event => {
+  const field = event.target.name;
+  if (draftFields.includes(field) && !$('draft-banner').hidden) setNote(field, 'edited', 'Edited by you.');
+});
 function bindForm(id, submit) {
   $(id).addEventListener('submit', async event => {
     event.preventDefault();
@@ -130,6 +202,8 @@ $('demo').onclick = async () => {try {const result = await api('/api/demo','POST
 for (const id of ['search','from-date','to-date']) $(id).addEventListener('input', renderRecords);
 $('clear-filters').onclick = () => {for (const id of ['search','from-date','to-date']) $(id).value = ''; renderRecords();};
 document.querySelectorAll('.service-options').forEach(select => select.innerHTML = services.map(s => `<option>${s}</option>`).join(''));
+$('record-form').elements.service_item.insertAdjacentHTML('afterbegin', '<option value="" disabled hidden>Choose a service</option>');
+loadAssist();
 document.addEventListener('click', async event => {
   const target = event.target.closest('button'); if (!target) return;
   try {

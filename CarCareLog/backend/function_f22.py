@@ -12,7 +12,7 @@ import hashlib
 import json
 import re
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 # SR08 baseline distance is 500 international miles; records use kilometres.
 UPCOMING_DAYS = 30
@@ -62,11 +62,160 @@ def validate_and_route_owner_request(validated_owner_service_request, *,
 def coordinate_ai_requests_and_responses(receipt_or_question_request, *,
                                         configured_ai_service_contract_limits,
                                         authorized_records_and_source_references):
-    """F.2.2.2 / C.2.2: request a draft through the configured receipt adapter."""
-    drafter = configured_ai_service_contract_limits.get("receipt_drafter")
+    """F.2.2.2 / C.2.2: request a receipt draft and check it before owner review.
+
+    Input: the receipt text only. Control: the configured drafter and service list.
+    Output: form values plus per-field evidence, or an exception the caller turns
+    into an explicit unavailable response. Question answering remains unavailable.
+    """
+    limits = configured_ai_service_contract_limits
+    drafter = limits.get("receipt_drafter")
     if drafter is None or receipt_or_question_request.get("kind") != "receipt":
         raise NotImplementedError("This AI operation is unavailable.")
-    return drafter(receipt_or_question_request["receipt_text"])
+    text = receipt_or_question_request["receipt_text"]
+    return review_receipt_draft(drafter(text), text,
+                                services=limits.get("services", SERVICE_ITEMS),
+                                today=limits.get("today") or date.today())
+
+
+SERVICE_ITEMS = ("Oil change", "Tire rotation", "Brake service", "Inspection", "Battery", "Other")
+SERVICE_WORDS = {"Oil change": ("oil",), "Tire rotation": ("rotat",), "Brake service": ("brake",),
+                 "Inspection": ("inspect",), "Battery": ("battery",)}
+MILES_TO_KM = Decimal("1.609344")
+# The amount paid, printed right after its label. "Subtotal", line items and a total
+# mentioned inside a sentence (for example an injected instruction) do not count.
+TOTAL_LABEL = (r"(?<![a-z])(?<!sub-)(?<!sub )(?:grand )?(?:total(?: due| paid)?|amount due|balance due)"
+               r"[\s:]*(?:usd\s*)?\$?\s*")
+MONTHS = ("january", "february", "march", "april", "may", "june", "july", "august",
+          "september", "october", "november", "december")
+
+
+def _plain(text):
+    """Lower-case text with single spaces and no period after an abbreviation."""
+    return re.sub(r"\s+", " ", re.sub(r"(?<=[a-z])\.", "", str(text).lower()))
+
+
+def _number_in(text, digits):
+    """True if the digits appear as a whole number, with or without thousands separators."""
+    grouped = f"{int(digits):,}"
+    for form in {digits, grouped, grouped.replace(",", " "), grouped.replace(",", ".")}:
+        if re.search(r"(?<![\d.,])" + re.escape(form) + r"(?![\d]|[.,]\d)", text):
+            return True
+    return False
+
+
+def _date_forms(day):
+    month = MONTHS[day.month - 1]
+    names = {month, month[:3]} | ({"sept"} if day.month == 9 else set())
+    forms = {day.isoformat(), f"{day.year}/{day.month:02}/{day.day:02}"}
+    for m in {str(day.month), f"{day.month:02}"}:
+        for d in {str(day.day), f"{day.day:02}"}:
+            for y in {str(day.year), f"{day.year % 100:02}"}:
+                forms |= {f"{m}/{d}/{y}", f"{m}-{d}-{y}", f"{m}.{d}.{y}"}
+    for name in names:
+        forms |= {f"{name} {day.day}, {day.year}", f"{name} {day.day} {day.year}",
+                  f"{day.day} {name} {day.year}", f"{name} {day.day:02}, {day.year}"}
+    return forms
+
+
+def review_receipt_draft(draft, receipt_text, *, services=SERVICE_ITEMS, today=None):
+    """Containment for a well-formed but possibly wrong model draft (F.2.2.2).
+
+    Every value is validated on its own; an invalid value becomes missing instead of
+    failing the whole draft. Each kept value is then looked up in the receipt text.
+    Values the receipt does not support are flagged so the owner checks them.
+    Status per field: found (on the receipt), check (owner must verify), missing.
+    Nothing here writes a record: the owner still has to Confirm & save.
+    """
+    today = today or date.today()
+    text = _plain(receipt_text)
+    proposal, evidence = {}, {}
+
+    def keep(field, value, status, note):
+        proposal[field] = value
+        evidence[field] = {"status": status, "note": note}
+
+    # Service date.
+    raw = draft.get("service_date")
+    try:
+        day = date.fromisoformat(raw) if isinstance(raw, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw) else None
+    except ValueError:
+        day = None
+    if day is None:
+        keep("service_date", None, "missing", "Not found on the receipt. Enter the service date.")
+    elif day > today:
+        keep("service_date", None, "missing", "The drafted date is in the future. Enter the service date.")
+    elif any(form in text for form in _date_forms(day)):
+        keep("service_date", day.isoformat(), "found", "Found on the receipt.")
+    else:
+        keep("service_date", day.isoformat(), "check", "This date is not printed on the receipt. Check it.")
+
+    # Service item (a classification from the receipt wording).
+    item = draft.get("service_item")
+    if item not in services:
+        keep("service_item", None, "missing", "No supported service found. Choose one.")
+    elif item in SERVICE_WORDS and any(word in text for word in SERVICE_WORDS[item]):
+        keep("service_item", item, "found", "Matches the receipt wording.")
+    else:
+        keep("service_item", item, "check", "Not stated in those words on the receipt. Check it.")
+
+    # Category is always a judgment, so the owner confirms it.
+    category = draft.get("category")
+    if category in ("Maintenance", "Repair"):
+        keep("category", category, "check", "Suggested by the AI. Confirm Maintenance or Repair.")
+    else:
+        keep("category", None, "missing", "Choose Maintenance or Repair.")
+
+    # Odometer: the model copies the printed number and unit; the app converts.
+    value, unit = draft.get("odometer_value"), draft.get("odometer_unit")
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 10_000_000:
+        keep("mileage", None, "missing", "No odometer reading on the receipt. Enter the mileage.")
+    else:
+        km = int((Decimal(value) * MILES_TO_KM).to_integral_value()) if unit == "mi" else value
+        printed = _number_in(text, str(value))
+        if not printed:
+            keep("mileage", km, "check", "This odometer reading is not printed on the receipt. Check it.")
+        elif unit == "mi":
+            keep("mileage", km, "found", f"Receipt shows {value:,} mi, converted to {km:,} km.")
+        elif unit == "km":
+            keep("mileage", km, "found", "Found on the receipt.")
+        else:
+            keep("mileage", km, "check", f"Receipt shows {value:,} with no unit. Entered as km; check km or miles.")
+
+    # Cost: the final total, at most two decimals.
+    try:
+        amount = Decimal(str(draft.get("cost")).replace("$", "").replace(",", "").strip())
+        if not amount.is_finite() or not 0 <= amount <= 1_000_000 or amount != amount.quantize(Decimal("0.01")):
+            amount = None
+    except InvalidOperation:
+        amount = None
+    if draft.get("cost") is None or amount is None:
+        keep("cost", None, "missing", "No total found. Enter the cost.")
+    else:
+        cents = f"{amount:.2f}"
+        forms = {cents, f"{amount:,.2f}"}
+
+        def printed(prefix):
+            return any(re.search(prefix + re.escape(form) + r"(?!\d)", text) for form in forms)
+
+        if printed(TOTAL_LABEL):
+            keep("cost", cents, "found", "Matches the total on the receipt.")
+        elif printed(r"(?<![\d.,])"):
+            keep("cost", cents, "check", "This amount is on the receipt but not next to the total. "
+                                         "Check that it is the final total.")
+        else:
+            keep("cost", cents, "check", "This amount is not printed on the receipt. Check the total.")
+
+    # Provider.
+    provider = draft.get("provider")
+    if not isinstance(provider, str) or not provider.strip() or len(provider.strip()) > 120:
+        keep("provider", None, "missing", "No shop name found. Add it if you like.")
+    elif _plain(provider.strip()) in text:
+        keep("provider", provider.strip(), "found", "Found on the receipt.")
+    else:
+        keep("provider", provider.strip(), "check", "This name is not printed on the receipt. Check it.")
+
+    return {"proposal": proposal, "evidence": evidence}
 
 
 def coordinate_confirmed_record_transaction(confirmed_transaction_request, *,
