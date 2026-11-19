@@ -75,6 +75,11 @@ class ReceiptEvaluationTests(unittest.TestCase):
         self.assertEqual(summary["field_values"], 0)
         self.assertIsNone(summary["field_accuracy"])
 
+    def test_p95_uses_the_nearest_rank_of_warm_requests(self):
+        times = [60, *range(19, 0, -1)]
+        summary = ev.summarize([{"seconds": value} for value in times])
+        self.assertEqual(summary["latency_seconds"]["warm_p95"], 19)
+
     def test_report_files_are_written(self):
         by_text = {s["text"]: s["ideal_draft"] for s in self.samples}
         results, summary = self.run_with(lambda text: dict(by_text[text]))

@@ -2,16 +2,16 @@
 
 import argparse
 from datetime import datetime, timezone
+from getpass import getpass
 import hashlib
 import json
-import math
 import os
 from pathlib import Path
 import statistics
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from evaluate_receipts import FIELDS, SAMPLES, evaluate, load_samples, runtime
+from evaluate_receipts import FIELDS, SAMPLES, evaluate, load_samples, nearest_rank_p95, runtime
 
 
 HOSTED_MODEL = "gpt-6.1-sol"
@@ -72,10 +72,10 @@ def measure(samples, drafter):
         print(f"{entry['id']} {entry['seconds']:.3f} s"
               + (f" ({entry['error']})" if entry["error"] else ""), flush=True)
     completed = [row for row in results if "fields" in row]
-    durations = sorted(row["seconds"] for row in results[1:] if "fields" in row)
+    durations = [row["seconds"] for row in results[1:] if "fields" in row]
     correct = sum(field["outcome"].startswith("correct")
                   for row in completed for field in row["fields"].values())
-    p95 = durations[math.ceil(.95 * len(durations)) - 1] if durations else None
+    p95 = nearest_rank_p95(durations)
     expected = len(samples) * len(FIELDS)
     return {
         "first_request_seconds": results[0]["seconds"],
@@ -94,12 +94,15 @@ def measure(samples, drafter):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("provider", choices=["local", "hosted"])
+    parser.add_argument("--prompt-key", action="store_true",
+                        help="Read the hosted API key without displaying or saving it.")
     args = parser.parse_args()
     samples = load_samples()
     if args.provider == "hosted":
-        key = os.environ.get("OPENAI_API_KEY")
+        key = (getpass("OpenAI API key: ") if args.prompt_key else
+               os.environ.get("OPENAI_API_KEY", "")).strip()
         if not key:
-            raise SystemExit("OPENAI_API_KEY is missing from this process.")
+            raise SystemExit("No API key was provided. Use --prompt-key or set OPENAI_API_KEY.")
         run = {"model": HOSTED_MODEL, "endpoint": HOSTED_ENDPOINT, "reasoning_effort": "low"}
         drafter = hosted_drafter(key)
     else:

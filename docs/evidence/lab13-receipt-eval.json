@@ -1,0 +1,1147 @@
+{
+  "run": {
+    "model": "qwen2.5:3b-instruct-q4_K_M",
+    "runtime": {
+      "ollama_version": "0.40.16",
+      "model": "qwen2.5:3b-instruct-q4_K_M",
+      "family": "qwen2",
+      "parameter_size": "3.1B",
+      "quantization_level": "Q4_K_M",
+      "format": "gguf",
+      "pinned_weights_digest": "5ee4f07cdb9b",
+      "weights_digest_matches_pin": true
+    },
+    "cold_start": true,
+    "started_utc": "2026-11-19T04:22:00+00:00",
+    "finished_utc": "2026-11-19T04:25:32+00:00",
+    "machine": "Windows 11 AMD64 Intel64 Family 6 Model 170 Stepping 4, GenuineIntel",
+    "python": "3.14.8"
+  },
+  "summary": {
+    "receipts": 20,
+    "drafted": 20,
+    "runtime_failures": 0,
+    "receipts_all_fields_correct": 17,
+    "well_formed_but_wrong_receipts": 3,
+    "field_values": 120,
+    "field_accuracy": 0.95,
+    "wrong_values": 6,
+    "wrong_values_flagged": 6,
+    "wrong_values_unflagged": 0,
+    "containment_catch_rate": 1.0,
+    "correct_values_flagged_for_check": 22,
+    "latency_seconds": {
+      "first_request": 23.576,
+      "warm_median": 9.237,
+      "warm_p95": 15.978,
+      "max": 23.576,
+      "timeout_setting": 60.0
+    },
+    "per_field": {
+      "service_date": {
+        "correct": 19,
+        "correct_flagged": 1,
+        "wrong_flagged": 0,
+        "wrong_unflagged": 0,
+        "accuracy": 1.0
+      },
+      "service_item": {
+        "correct": 16,
+        "correct_flagged": 2,
+        "wrong_flagged": 2,
+        "wrong_unflagged": 0,
+        "accuracy": 0.9
+      },
+      "category": {
+        "correct": 0,
+        "correct_flagged": 17,
+        "wrong_flagged": 3,
+        "wrong_unflagged": 0,
+        "accuracy": 0.85
+      },
+      "mileage": {
+        "correct": 18,
+        "correct_flagged": 1,
+        "wrong_flagged": 1,
+        "wrong_unflagged": 0,
+        "accuracy": 0.95
+      },
+      "cost": {
+        "correct": 20,
+        "correct_flagged": 0,
+        "wrong_flagged": 0,
+        "wrong_unflagged": 0,
+        "accuracy": 1.0
+      },
+      "provider": {
+        "correct": 19,
+        "correct_flagged": 1,
+        "wrong_flagged": 0,
+        "wrong_unflagged": 0,
+        "accuracy": 1.0
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "R01",
+      "focus": "demo receipt; miles; subtotal vs total",
+      "seconds": 23.576,
+      "error": null,
+      "raw": {
+        "service_date": "2026-11-16",
+        "service_item": "Oil change",
+        "category": "Maintenance",
+        "odometer_value": 32311,
+        "odometer_unit": "mi",
+        "cost": "89.99",
+        "provider": "QuickLube Express"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-11-16",
+          "want": "2026-11-16",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Oil change",
+          "want": "Oil change",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 52000,
+          "want": 52000,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "89.99",
+          "want": "89.99",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "QuickLube Express",
+          "want": "QuickLube Express",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R02",
+      "focus": "ISO date; km",
+      "seconds": 15.978,
+      "error": null,
+      "raw": {
+        "service_date": "2026-10-21",
+        "service_item": "Tire rotation",
+        "category": "Maintenance",
+        "odometer_value": 48750,
+        "odometer_unit": "km",
+        "cost": "48.60",
+        "provider": "Cayuga Tire & Auto"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-10-21",
+          "want": "2026-10-21",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Tire rotation",
+          "want": "Tire rotation",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 48750,
+          "want": 48750,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "48.60",
+          "want": "48.60",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Cayuga Tire & Auto",
+          "want": "Cayuga Tire & Auto",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R03",
+      "focus": "month name; phone number distractor; repair",
+      "seconds": 12.392,
+      "error": null,
+      "raw": {
+        "service_date": "2026-10-05",
+        "service_item": "Brake service",
+        "category": "Repair",
+        "odometer_value": 41200,
+        "odometer_unit": "mi",
+        "cost": "463.86",
+        "provider": "MAIN STREET AUTO CARE"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-10-05",
+          "want": "2026-10-05",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Brake service",
+          "want": "Brake service",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Repair",
+          "want": "Repair",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 66305,
+          "want": 66305,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "463.86",
+          "want": "463.86",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "MAIN STREET AUTO CARE",
+          "want": "Main Street Auto Care",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R04",
+      "focus": "inspection; miles",
+      "seconds": 10.054,
+      "error": null,
+      "raw": {
+        "service_date": "2026-09-12",
+        "service_item": "Inspection",
+        "category": "Maintenance",
+        "odometer_value": 22480,
+        "odometer_unit": "mi",
+        "cost": "21.00",
+        "provider": "Lakeview Service Center"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-09-12",
+          "want": "2026-09-12",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Inspection",
+          "want": "Inspection",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 36178,
+          "want": 36178,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "21.00",
+          "want": "21.00",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Lakeview Service Center",
+          "want": "Lakeview Service Center",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R05",
+      "focus": "battery replacement; offsetting lines",
+      "seconds": 9.722,
+      "error": null,
+      "raw": {
+        "service_date": "2026-08-30",
+        "service_item": "Other",
+        "category": "Maintenance",
+        "odometer_value": null,
+        "odometer_unit": "km",
+        "cost": "205.19",
+        "provider": "Ithaca Battery Depot"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-08-30",
+          "want": "2026-08-30",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Other",
+          "want": "Battery",
+          "status": "check",
+          "outcome": "wrong_flagged"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Repair",
+          "status": "check",
+          "outcome": "wrong_flagged"
+        },
+        "mileage": {
+          "got": null,
+          "want": 37915,
+          "status": "missing",
+          "outcome": "wrong_flagged"
+        },
+        "cost": {
+          "got": "205.19",
+          "want": "205.19",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Ithaca Battery Depot",
+          "want": "Ithaca Battery Depot",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R06",
+      "focus": "discount line",
+      "seconds": 9.237,
+      "error": null,
+      "raw": {
+        "service_date": "2026-07-14",
+        "service_item": "Oil change",
+        "category": "Maintenance",
+        "odometer_value": 30050,
+        "odometer_unit": "mi",
+        "cost": "43.19",
+        "provider": "Finger Lakes Lube"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-07-14",
+          "want": "2026-07-14",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Oil change",
+          "want": "Oil change",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 48361,
+          "want": 48361,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "43.19",
+          "want": "43.19",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Finger Lakes Lube",
+          "want": "Finger Lakes Lube",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R07",
+      "focus": "no odometer printed",
+      "seconds": 7.864,
+      "error": null,
+      "raw": {
+        "service_date": "2026-06-03",
+        "service_item": "Tire rotation",
+        "category": "Maintenance",
+        "odometer_value": null,
+        "odometer_unit": null,
+        "cost": "35.00",
+        "provider": "Collegetown Garage"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-06-03",
+          "want": "2026-06-03",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Tire rotation",
+          "want": "Tire rotation",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": null,
+          "want": null,
+          "status": "missing",
+          "outcome": "correct_flagged"
+        },
+        "cost": {
+          "got": "35.00",
+          "want": "35.00",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Collegetown Garage",
+          "want": "Collegetown Garage",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R08",
+      "focus": "no date printed",
+      "seconds": 6.665,
+      "error": null,
+      "raw": {
+        "service_date": null,
+        "service_item": "Battery",
+        "category": "Maintenance",
+        "odometer_value": 55300,
+        "odometer_unit": "km",
+        "cost": "25.00",
+        "provider": "East Hill Auto"
+      },
+      "fields": {
+        "service_date": {
+          "got": null,
+          "want": null,
+          "status": "missing",
+          "outcome": "correct_flagged"
+        },
+        "service_item": {
+          "got": "Battery",
+          "want": "Battery",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 55300,
+          "want": 55300,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "25.00",
+          "want": "25.00",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "East Hill Auto",
+          "want": "East Hill Auto",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R09",
+      "focus": "prompt injection in receipt text",
+      "seconds": 9.177,
+      "error": null,
+      "raw": {
+        "service_date": "2026-05-20",
+        "service_item": "Oil change",
+        "category": "Maintenance",
+        "odometer_value": 28900,
+        "odometer_unit": "mi",
+        "cost": "70.15",
+        "provider": "Route 79 Quick Service"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-05-20",
+          "want": "2026-05-20",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Oil change",
+          "want": "Oil change",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 46510,
+          "want": 46510,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "70.15",
+          "want": "70.15",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Route 79 Quick Service",
+          "want": "Route 79 Quick Service",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R10",
+      "focus": "thousands separator; labor rate distractor",
+      "seconds": 10.414,
+      "error": null,
+      "raw": {
+        "service_date": "2026-04-02",
+        "service_item": "Brake service",
+        "category": "Repair",
+        "odometer_value": 63410,
+        "odometer_unit": "km",
+        "cost": "1190.27",
+        "provider": "Tompkins Collision & Repair"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-04-02",
+          "want": "2026-04-02",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Brake service",
+          "want": "Brake service",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Repair",
+          "want": "Repair",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 63410,
+          "want": 63410,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "1190.27",
+          "want": "1190.27",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Tompkins Collision & Repair",
+          "want": "Tompkins Collision & Repair",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R11",
+      "focus": "two services; inspection is the main one",
+      "seconds": 8.965,
+      "error": null,
+      "raw": {
+        "service_date": "2026-03-18",
+        "service_item": "Inspection",
+        "category": "Maintenance",
+        "odometer_value": 19850,
+        "odometer_unit": "mi",
+        "cost": "47.99",
+        "provider": "Northside Auto"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-03-18",
+          "want": "2026-03-18",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Inspection",
+          "want": "Inspection",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 31945,
+          "want": 31945,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "47.99",
+          "want": "47.99",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Northside Auto",
+          "want": "Northside Auto",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R12",
+      "focus": "service outside the fixed list",
+      "seconds": 8.535,
+      "error": null,
+      "raw": {
+        "service_date": "2026-02-27",
+        "service_item": "Other",
+        "category": "Maintenance",
+        "odometer_value": 71020,
+        "odometer_unit": "km",
+        "cost": "140.35",
+        "provider": "Cornell Heights Car Care"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-02-27",
+          "want": "2026-02-27",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Other",
+          "want": "Other",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 71020,
+          "want": 71020,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "140.35",
+          "want": "140.35",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Cornell Heights Car Care",
+          "want": "Cornell Heights Car Care",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R13",
+      "focus": "repair outside the fixed list",
+      "seconds": 9.222,
+      "error": null,
+      "raw": {
+        "service_date": "2026-01-15",
+        "service_item": "Other",
+        "category": "Repair",
+        "odometer_value": 88640,
+        "odometer_unit": "mi",
+        "cost": "354.78",
+        "provider": "Ithaca Engine Works"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-01-15",
+          "want": "2026-01-15",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Other",
+          "want": "Other",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "category": {
+          "got": "Repair",
+          "want": "Repair",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 142652,
+          "want": 142652,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "354.78",
+          "want": "354.78",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Ithaca Engine Works",
+          "want": "Ithaca Engine Works",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R14",
+      "focus": "day-month-year date",
+      "seconds": 8.457,
+      "error": null,
+      "raw": {
+        "service_date": "2025-12-15",
+        "service_item": "Tire rotation",
+        "category": "Maintenance",
+        "odometer_value": 44005,
+        "odometer_unit": "km",
+        "cost": "30.00",
+        "provider": "Southside Tire"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2025-12-15",
+          "want": "2025-12-15",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Tire rotation",
+          "want": "Tire rotation",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 44005,
+          "want": 44005,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "30.00",
+          "want": "30.00",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Southside Tire",
+          "want": "Southside Tire",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R15",
+      "focus": "'Balance due' as total",
+      "seconds": 12.778,
+      "error": null,
+      "raw": {
+        "service_date": "2025-11-30",
+        "service_item": "Oil change",
+        "category": "Maintenance",
+        "odometer_value": 26775,
+        "odometer_unit": "mi",
+        "cost": "39.99",
+        "provider": "Lansing Lube Center"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2025-11-30",
+          "want": "2025-11-30",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Oil change",
+          "want": "Oil change",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 43090,
+          "want": 43090,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "39.99",
+          "want": "39.99",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Lansing Lube Center",
+          "want": "Lansing Lube Center",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R16",
+      "focus": "cash and change distractors",
+      "seconds": 10.411,
+      "error": null,
+      "raw": {
+        "service_date": "2026-11-01",
+        "service_item": "Oil change",
+        "category": "Maintenance",
+        "odometer_value": 51200,
+        "odometer_unit": "km",
+        "cost": "86.35",
+        "provider": "Downtown Express Lube"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-11-01",
+          "want": "2026-11-01",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Oil change",
+          "want": "Oil change",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 51200,
+          "want": 51200,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "86.35",
+          "want": "86.35",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Downtown Express Lube",
+          "want": "Downtown Express Lube",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R17",
+      "focus": "zero total",
+      "seconds": 9.095,
+      "error": null,
+      "raw": {
+        "service_date": "2026-09-09",
+        "service_item": "Other",
+        "category": null,
+        "odometer_value": 39120,
+        "odometer_unit": "km",
+        "cost": "0.00",
+        "provider": "Ithaca Battery Depot"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-09-09",
+          "want": "2026-09-09",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Other",
+          "want": "Battery",
+          "status": "check",
+          "outcome": "wrong_flagged"
+        },
+        "category": {
+          "got": null,
+          "want": "Repair",
+          "status": "missing",
+          "outcome": "wrong_flagged"
+        },
+        "mileage": {
+          "got": 39120,
+          "want": 39120,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "0.00",
+          "want": "0.00",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Ithaca Battery Depot",
+          "want": "Ithaca Battery Depot",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R18",
+      "focus": "no shop name; odometer after total",
+      "seconds": 7.81,
+      "error": null,
+      "raw": {
+        "service_date": "2026-10-10",
+        "service_item": "Brake service",
+        "category": "Repair",
+        "odometer_value": 47500,
+        "odometer_unit": "mi",
+        "cost": "89.00",
+        "provider": null
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-10-10",
+          "want": "2026-10-10",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Brake service",
+          "want": "Brake service",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Repair",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "wrong_flagged"
+        },
+        "mileage": {
+          "got": 76444,
+          "want": 76444,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "89.00",
+          "want": "89.00",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": null,
+          "want": null,
+          "status": "missing",
+          "outcome": "correct_flagged"
+        }
+      }
+    },
+    {
+      "id": "R19",
+      "focus": "two dates; service date wins",
+      "seconds": 10.536,
+      "error": null,
+      "raw": {
+        "service_date": "2026-08-04",
+        "service_item": "Tire rotation",
+        "category": "Maintenance",
+        "odometer_value": 33870,
+        "odometer_unit": "mi",
+        "cost": "29.99",
+        "provider": "Fall Creek Auto Service"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-08-04",
+          "want": "2026-08-04",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Tire rotation",
+          "want": "Tire rotation",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 54508,
+          "want": 54508,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "29.99",
+          "want": "29.99",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Fall Creek Auto Service",
+          "want": "Fall Creek Auto Service",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    },
+    {
+      "id": "R20",
+      "focus": "abbreviated odometer label",
+      "seconds": 11.564,
+      "error": null,
+      "raw": {
+        "service_date": "2026-07-07",
+        "service_item": "Inspection",
+        "category": "Maintenance",
+        "odometer_value": 15420,
+        "odometer_unit": "km",
+        "cost": "21.00",
+        "provider": "Varna Service Station"
+      },
+      "fields": {
+        "service_date": {
+          "got": "2026-07-07",
+          "want": "2026-07-07",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "service_item": {
+          "got": "Inspection",
+          "want": "Inspection",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "category": {
+          "got": "Maintenance",
+          "want": "Maintenance",
+          "status": "check",
+          "outcome": "correct_flagged"
+        },
+        "mileage": {
+          "got": 15420,
+          "want": 15420,
+          "status": "found",
+          "outcome": "correct"
+        },
+        "cost": {
+          "got": "21.00",
+          "want": "21.00",
+          "status": "found",
+          "outcome": "correct"
+        },
+        "provider": {
+          "got": "Varna Service Station",
+          "want": "Varna Service Station",
+          "status": "found",
+          "outcome": "correct"
+        }
+      }
+    }
+  ]
+}

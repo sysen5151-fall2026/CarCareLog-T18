@@ -49,7 +49,7 @@ The page itself was also driven in a headless browser against this build: paste 
 
 ## Run 2: team laptop with the pinned model
 
-Run the remaining README steps on a team laptop with Ollama installed:
+The Windows team laptop ran Python 3.14.8 with Ollama 0.40.16 and the pinned Qwen2.5 3B Q4_K_M model. The runtime confirmed the pinned weights digest. This is a separate run from the clean Ubuntu container above.
 
 ```text
 ollama pull qwen2.5:3b-instruct-q4_K_M
@@ -57,4 +57,4 @@ python3 CarCareLog/tools/smoke_test.py --real-model
 python3 CarCareLog/tools/evaluate_receipts.py
 ```
 
-The evaluation writes `docs/evidence/lab13-receipt-eval.md` and `.json` with the machine, Ollama version, model build, accuracy, and latency. Add that report to the repository with the date of the run.
+The real-model smoke test passed, covering draft review before write, owner confirmation, duplicate-submit handling, persistence after restart, and the unavailable-runtime manual fallback. The [evaluation summary](evidence/lab13-receipt-eval.md) and [raw results](evidence/lab13-receipt-eval.json) record the 20 synthetic receipts, 114 correct fields out of 120, and the request timings. The first request took 23.576 seconds. The warm median was 9.237 seconds and nearest-rank p95 was 15.978 seconds.

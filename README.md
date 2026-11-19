@@ -90,6 +90,10 @@ The smoke test starts the real application as a separate process on a free port 
 
 [`evaluate_receipts.py`](CarCareLog/tools/evaluate_receipts.py) runs every sample through the same adapter and checks as the web page. It unloads the model first so the first request measures a cold start. For each field it reports whether the value was correct and whether a wrong value was flagged for the owner or shown as found. It also reports latency and the model build. The report is written to `docs/evidence/lab13-receipt-eval.md` and `.json`.
 
+See the [pinned-model results](docs/evidence/lab13-receipt-eval.md) and [per-receipt JSON](docs/evidence/lab13-receipt-eval.json) for the measured Windows run.
+
+[`compare_receipt_runtimes.py`](CarCareLog/tools/compare_receipt_runtimes.py) measures the hosted GPT-6.1 Sol alternative on the same synthetic receipts. Run `py -3 CarCareLog/tools/compare_receipt_runtimes.py hosted --prompt-key` on Windows, or use `python3` on macOS or Linux. Use an API key with access to that model. The hosted benchmark is independent of the web application's local drafting feature.
+
 The checks catch values that are well formed but not on the receipt: a date or odometer reading that is not printed, a cost that is not printed next to the total (for example a subtotal), a shop name that is not printed, and miles entered without a unit. A value that is printed on the receipt but belongs to the wrong field can still pass, which is why the owner reviews every field before saving.
 
 ## OpsCon and as-built system

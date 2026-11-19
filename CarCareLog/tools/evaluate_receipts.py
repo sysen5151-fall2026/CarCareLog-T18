@@ -19,6 +19,7 @@ The report goes to docs/evidence/lab13-receipt-eval.md and .json.
 import argparse
 from datetime import date, datetime, timezone
 import json
+import math
 import platform
 from pathlib import Path
 import statistics
@@ -83,6 +84,10 @@ def _ratio(part, whole):
     return round(part / whole, 3) if whole else None
 
 
+def nearest_rank_p95(seconds):
+    return sorted(seconds)[math.ceil(0.95 * len(seconds)) - 1] if seconds else None
+
+
 def summarize(results):
     drafted = [r for r in results if "fields" in r]
     per_field = {}
@@ -114,7 +119,7 @@ def summarize(results):
         "latency_seconds": {
             "first_request": seconds[0] if seconds else None,
             "warm_median": round(statistics.median(warm), 3) if warm else None,
-            "warm_p95": round(sorted(warm)[max(0, round(0.95 * len(warm)) - 1)], 3) if warm else None,
+            "warm_p95": nearest_rank_p95(warm),
             "max": max(seconds) if seconds else None,
             "timeout_setting": runtime.RUNTIME_TIMEOUT,
         },
@@ -164,7 +169,8 @@ def render_markdown(summary, results, run):
         f"| **Wrong values shown as found (not flagged)** | **{summary['wrong_values_unflagged']}** |",
         f"| Correct values still flagged for a check | {summary['correct_values_flagged_for_check']} |",
         f"| First request (includes model load) | {lat['first_request']} s |",
-        f"| Warm median / p95 / max | {lat['warm_median']} s / {lat['warm_p95']} s / {lat['max']} s |",
+        f"| Warm median / warm nearest-rank p95 / overall max | "
+        f"{lat['warm_median']} s / {lat['warm_p95']} s / {lat['max']} s |",
         f"| Runtime timeout setting | {lat['timeout_setting']} s |",
         "",
         "Category is always flagged for a check by design, so its correct values count as correct_flagged.",
