@@ -128,7 +128,7 @@ The service provider gives receipts to the owner outside the application. There 
 
 ## Design decisions and risks
 
-[ADR 011](docs/adr-011-receipt-runtime.md) records the original choice of SA.A and Qwen2.5. The current implementation keeps the on-device runtime and uses the vision-capable Qwen3.5 model pinned above. The [risk register](docs/risks.md) links to the native Innoslate matrix. Open items are tracked in [GitHub Issues](https://github.com/sysen5151-fall2026/CarCareLog-T18/issues).
+[ADR 011](docs/adr-011-receipt-runtime.md) records the original choice of SA.A and Qwen2.5. [ADR 012](docs/adr-012-local-receipt-vision.md) records the Qwen3.5 image-input increment. The [risk register](docs/risks.md) links to the native Innoslate matrix. Open items are tracked in [GitHub Issues](https://github.com/sysen5151-fall2026/CarCareLog-T18/issues).
 
 ## Tests and related files
 

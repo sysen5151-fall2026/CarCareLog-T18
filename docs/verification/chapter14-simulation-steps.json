@@ -1,0 +1,165 @@
+[
+  {
+    "number": "SIM.UC1.B.01",
+    "id": "308530",
+    "name": "Enter and confirm maintenance fields",
+    "distribution": "EXPONENTIAL",
+    "parameters": {
+      "lambda": 0.05
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.02",
+    "id": "308531",
+    "name": "Send confirmed service request",
+    "distribution": "NORMAL",
+    "parameters": {
+      "mu": 0.035,
+      "sigma": 0.006
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.03",
+    "id": "308532",
+    "name": "Validate and route service request",
+    "distribution": "NORMAL",
+    "parameters": {
+      "mu": 0.006,
+      "sigma": 0.001
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.04",
+    "id": "308533",
+    "name": "Commit confirmed record and mileage",
+    "distribution": "NORMAL",
+    "parameters": {
+      "mu": 0.03,
+      "sigma": 0.005
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.05",
+    "id": "308534",
+    "name": "Return stored record confirmation",
+    "distribution": "NORMAL",
+    "parameters": {
+      "mu": 0.01,
+      "sigma": 0.002
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.06",
+    "id": "308535",
+    "name": "Request refreshed vehicle list",
+    "distribution": "NORMAL",
+    "parameters": {
+      "mu": 0.035,
+      "sigma": 0.006
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.07",
+    "id": "308536",
+    "name": "Forward vehicle list query",
+    "distribution": "NORMAL",
+    "parameters": {
+      "mu": 0.004,
+      "sigma": 0.0007
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.08",
+    "id": "308537",
+    "name": "Read vehicle list",
+    "distribution": "NORMAL",
+    "parameters": {
+      "mu": 0.008,
+      "sigma": 0.0015
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.09",
+    "id": "308538",
+    "name": "Return refreshed vehicle list",
+    "distribution": "NORMAL",
+    "parameters": {
+      "mu": 0.01,
+      "sigma": 0.002
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.10",
+    "id": "308539",
+    "name": "Request dashboard data",
+    "distribution": "NORMAL",
+    "parameters": {
+      "mu": 0.035,
+      "sigma": 0.006
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.11",
+    "id": "308540",
+    "name": "Request records and interval rules",
+    "distribution": "NORMAL",
+    "parameters": {
+      "mu": 0.004,
+      "sigma": 0.0007
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.12",
+    "id": "308541",
+    "name": "Read stored vehicle data and rules",
+    "distribution": "NORMAL",
+    "parameters": {
+      "mu": 0.012,
+      "sigma": 0.002
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.13",
+    "id": "308542",
+    "name": "Calculate and return dashboard data",
+    "distribution": "NORMAL",
+    "parameters": {
+      "mu": 0.016,
+      "sigma": 0.003
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.14",
+    "id": "308543",
+    "name": "Render record, spending, and reminders",
+    "distribution": "NORMAL",
+    "parameters": {
+      "mu": 0.04,
+      "sigma": 0.008
+    },
+    "units": "SECONDS"
+  },
+  {
+    "number": "SIM.UC1.B.15",
+    "id": "308544",
+    "name": "Check saved record and dashboard",
+    "distribution": "EXPONENTIAL",
+    "parameters": {
+      "lambda": 0.25
+    },
+    "units": "SECONDS"
+  }
+]

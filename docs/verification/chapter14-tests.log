@@ -1,0 +1,9 @@
+test_draft_requires_review_and_does_not_write (test_receipt_runtime.ReceiptRuntimeTests.test_draft_requires_review_and_does_not_write) ... ok
+test_ASR_1_1_6_browser_draft_converts_miles_and_saves_only_after_confirmation (test_receipt_runtime.ReceiptRuntimeTests.test_ASR_1_1_6_browser_draft_converts_miles_and_saves_only_after_confirmation)
+ASR 1.1.6: accept proposed date, mileage, items, cost, and provider from the runtime. ... ok
+test_R2_runtime_timeout_preserves_ledger_and_manual_save (test_receipt_runtime.ReceiptRuntimeTests.test_R2_runtime_timeout_preserves_ledger_and_manual_save) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 3.934s
+
+OK

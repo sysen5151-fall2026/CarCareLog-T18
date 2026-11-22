@@ -1,0 +1,30 @@
+{
+  "simulation": {
+    "n": 1000,
+    "passed": 1000,
+    "median_s": 19.058642606151608,
+    "nearest_rank_p95_s": 63.55802929127769,
+    "wilson95": [
+      0.996173241514445,
+      1
+    ]
+  },
+  "operating": {
+    "n": 30,
+    "passed": 30,
+    "median_s": 0.06621185003314167,
+    "nearest_rank_p95_s": 0.18889510002918541,
+    "wilson95": [
+      0.8864866068260312,
+      0.9999999999999999
+    ]
+  },
+  "product_file_sha256": {
+    "backend/app.py": "eba97b012ce0d0284ca97b75fe67dd4a3a774cb4f2e1afdd3b612bdf92ea6b78",
+    "backend/function_f22.py": "debc485248e1690a030e858627fbebc5281e9b75e61f41cd30677bfd1951d88e",
+    "backend/receipt_runtime.py": "9f1edb911d7e356c0d3ec3d2af7a0f4f4a091cff3e8fbe33f10593b84832b5f9",
+    "frontend/app.js": "8277789a090ef03d5e6096a56f782a735b0c1a54fdf1e5e4291b8258f7d4f393",
+    "frontend/index.html": "2c30da0807f4a2cf69646059ec4bed16b96ea7f989e04e01fcaf6058dcc146e5"
+  },
+  "protocol_sha256": "b4392fa870617a13e4141926e059049ae3b0d5e1bdfee74c6cfad3019e7fad30"
+}

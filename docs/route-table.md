@@ -1,6 +1,6 @@
 # Product entry point to use case audit
 
-Revision: Lab 13, December 2026. Covers registered HTTP operations and user-triggered product entries, including receipt-text drafting with the pinned local model. UC IDs and names come from the native T18 model.
+Revision: local vision build, November 22, 2026. Covers registered HTTP operations and user-triggered product entries, including text and photo receipt drafting with the pinned local model. UC IDs and names come from the native T18 model.
 
 | Product entry | HTTP operation | Use case | Function | Handler | Status |
 |---|---|---|---|---|---|
@@ -16,13 +16,13 @@ Revision: Lab 13, December 2026. Covers registered HTTP operations and user-trig
 | Remove reminder rule | DELETE /api/reminders/{id} | UC.2 configuration alternative | F.2.2.4 | app.py reminder removal | Implemented |
 | Export selected records | GET /api/export?vehicle_id={id} | UC.1 export alternative | F.2.2.4; F.2.1 | csv_export | Implemented selected-vehicle CSV |
 | Ask total / last oil question | GET /api/answer?vehicle_id={id}&question=total or oil | UC.4 Ask Questions About Vehicle Records | F.2.2.4; F.2.1 | app.py recorded-data lookup | Implemented deterministic subset; no generative AI |
-| Add record; Draft from receipt text; Draft with local AI | POST /api/receipt-draft | UC.1 receipt-assisted path | F.2.2.2 | app.py receipt_draft; receipt_runtime.py; function_f22.py review_receipt_draft | Implemented locally. Returns a checked draft; the owner reviews it and saves through Confirm & save. HTTP 503 with `not_configured` or `runtime_unavailable` leaves the form for manual entry |
+| Add record; Draft from a receipt; Draft with local AI | POST /api/receipt-draft | UC.1 receipt-assisted path | F.2.2.2 | app.py receipt_draft; receipt_runtime.py; function_f22.py review_receipt_draft | Implemented locally for pasted text or one JPEG/PNG up to 4 MiB. Text values are checked against the receipt and photo-derived values require visual comparison; the owner reviews it and saves through Confirm & save. HTTP 503 with `not_configured` or `runtime_unavailable` leaves the form for manual entry |
 | Open Add record (draft panel state) | GET /api/receipt-assist | UC.1 receipt-assisted path | F.2.2.2 | app.py | Implemented; reports whether drafting is configured and returns the synthetic sample receipt. Does not contact the runtime |
-| Receipt image upload / generative question | No route | UC.1 image alternative; UC.4 generative alternative | F.2.2.2 | Pending | OCR and general AI questions remain open |
+| General AI question | No public generative route | UC.4 generative alternative | F.2.2.2 | Pending | The dashboard retains the fixed record-grounded history lookups. |
 | Internal routing contract | POST /internal/v1/validate-and-route | UC.1 internal processing | F.2.2.1 | validate_and_route_owner_request | Implemented localhost adapter, no standalone UI |
 | Internal confirmed transaction | POST /internal/v1/confirmed-transaction | UC.1 internal processing | F.2.2.3 | coordinate_confirmed_record_transaction | Implemented localhost adapter |
 | Internal prepared information | POST /internal/v1/prepare-information | UC.1; UC.2; UC.3 internal processing | F.2.2.4 | calculate_maintenance_summary_and_reminders | Implemented localhost adapter |
-| Internal AI boundary | POST /internal/v1/coordinate-ai | UC.1 receipt text; UC.4 general questions remain open | F.2.2.2 | Same handler as POST /api/receipt-draft | Implemented localhost adapter for `kind: receipt`; HTTP 503 without the runtime, no automatic write |
+| Internal AI boundary | POST /internal/v1/coordinate-ai | UC.1 text or photo receipt; UC.4 general questions remain open | F.2.2.2 | Same handler as POST /api/receipt-draft | Implemented localhost adapter for `kind: receipt`; HTTP 503 without the runtime, no automatic write |
 | Static application files | GET /; GET /app.js; GET /styles.css | All UI entry points above | F.2.1 | frontend/index.html, app.js, styles.css | Presentation assets, not separate use cases |
 
 The application has no vehicle-delete or health endpoint. Unknown paths return 404. Local owner-confirmation flags are workflow controls, not authentication. All internal endpoints use the same localhost Host/Origin guard as product endpoints.
