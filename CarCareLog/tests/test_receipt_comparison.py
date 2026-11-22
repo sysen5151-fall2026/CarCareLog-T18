@@ -100,6 +100,14 @@ class ReceiptComparisonTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             cmp.measure(self.samples, cmp.hosted_drafter("bad", opener))
 
+    def test_e5_value_runs_from_two_seconds_to_the_timeout(self):
+        self.assertEqual(cmp.e5_value(1.5), 1.0)
+        self.assertEqual(cmp.e5_value(2), 1.0)
+        self.assertAlmostEqual(cmp.e5_value(15.978), (60 - 15.978) / 58)
+        self.assertEqual(cmp.e5_value(60), 0.0)
+        self.assertEqual(cmp.e5_value(75), 0.0)
+        self.assertIsNone(cmp.e5_value(None))
+
     def test_sample_digest_ignores_line_endings(self):
         import tempfile
         with tempfile.TemporaryDirectory() as folder:

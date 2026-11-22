@@ -110,6 +110,17 @@ def hosted_cost(usage):
             "price_per_million": HOSTED_PRICE_PER_MILLION}
 
 
+def e5_value(p95):
+    """E5 value: 1 at 2 s or faster, 0 at the 60 s adapter timeout, linear in between."""
+    if p95 is None:
+        return None
+    if p95 <= 2:
+        return 1.0
+    if p95 >= DEADLINE:
+        return 0.0
+    return (DEADLINE - p95) / (DEADLINE - 2)
+
+
 def measure(samples, drafter):
     results = []
     for sample in samples:
@@ -141,7 +152,7 @@ def measure(samples, drafter):
         "per_field_accuracy": {f: summary["per_field"][f]["accuracy"] for f in FIELDS},
         "warm_median_seconds": statistics.median(durations) if durations else None,
         "warm_p95_seconds": p95,
-        "v5": max(0.0, 1 - p95 / 2) if p95 is not None else None,
+        "v5": e5_value(p95),
         "review_seconds_included": False,
         "results": results,
     }
@@ -196,7 +207,8 @@ def render_report(local, hosted):
         f"{_seconds(hosted['first_request_seconds'])} |",
         f"| Warm median / nearest-rank p95 | {_seconds(local['warm_median_seconds'])} / {_seconds(local['warm_p95_seconds'])} | "
         f"{_seconds(hosted['warm_median_seconds'])} / {_seconds(hosted['warm_p95_seconds'])} |",
-        f"| V5 latency score, 1 − p95 / 2 s | {local['v5']:.2f} | {hosted['v5']:.2f} |",
+        f"| E5 value, 1 at 2 s to 0 at the 60 s timeout | {e5_value(local['warm_p95_seconds']):.2f} | "
+        f"{e5_value(hosted['warm_p95_seconds']):.2f} |",
         f"| Model cost for this run | $0 (local electricity not counted) | about ${cost.get('estimated_usd', 0):.4f} "
         f"({cost.get('input_tokens', 0)} input, {cost.get('output_tokens', 0)} output tokens, "
         f"{cost.get('reasoning_tokens', 0)} of them reasoning) |",
