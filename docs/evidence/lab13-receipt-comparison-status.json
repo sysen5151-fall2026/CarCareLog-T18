@@ -1,0 +1,31 @@
+{
+  "record_type": "hosted_attempt_status",
+  "as_of_utc": "2026-11-22T20:51:26Z",
+  "model": "gpt-6.1-sol",
+  "samples_sha256": "a8da46ad220cae726f1216e433f3fcbba701e36c7ad6e29dc20b0ad2834b933f",
+  "local_measurements": "lab13-receipt-comparison-local.json",
+  "local_score_audit": "lab13-receipt-local-score-audit.md",
+  "model_access_check": {
+    "utc": "2026-11-22T20:50:34.0473654Z",
+    "http_status": 200
+  },
+  "responses_attempt": {
+    "sample_id": "R01",
+    "http_status": 429,
+    "drafts_returned": 0,
+    "evaluation_stopped_at_first_sample": true
+  },
+  "responses_diagnostic_retry": {
+    "sample_id": "R01",
+    "utc": "2026-11-22T20:51:26Z",
+    "http_status": 429,
+    "error_type": "insufficient_quota",
+    "error_code": "credit_balance_exhausted"
+  },
+  "hosted_field_accuracy": null,
+  "hosted_first_successful_response_seconds": null,
+  "hosted_warm_median_seconds": null,
+  "hosted_warm_p95_seconds": null,
+  "hosted_e5_value": null,
+  "observed_e5_leader": null
+}
