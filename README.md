@@ -92,7 +92,15 @@ The smoke test starts the real application as a separate process on a free port 
 
 See the [pinned-model results](docs/evidence/lab13-receipt-eval.md) and [per-receipt JSON](docs/evidence/lab13-receipt-eval.json) for the measured Windows run.
 
-[`compare_receipt_runtimes.py`](CarCareLog/tools/compare_receipt_runtimes.py) measures the hosted GPT-6.1 Sol alternative on the same synthetic receipts. Run `py -3 CarCareLog/tools/compare_receipt_runtimes.py hosted --prompt-key` on Windows, or use `python3` on macOS or Linux. Use an API key with access to that model. The hosted benchmark is independent of the web application's local drafting feature.
+[`compare_receipt_runtimes.py`](CarCareLog/tools/compare_receipt_runtimes.py) compares the two runtime alternatives from ADR 011 on the same 20 synthetic receipts, with the same prompt, draft schema and checks: SA.A, the pinned local model in Ollama, and SA.B, the hosted comparator `gpt-6.1-sol` called through the OpenAI Responses API (`https://api.openai.com/v1/responses`, reasoning effort low, `store` false). The hosted model is used only by this tool; the web application never sends receipt text off the computer. On Windows:
+
+```powershell
+py -3 CarCareLog/tools/compare_receipt_runtimes.py local
+py -3 CarCareLog/tools/compare_receipt_runtimes.py hosted --prompt-key   # type the OpenAI API key at the hidden prompt
+py -3 CarCareLog/tools/compare_receipt_runtimes.py report
+```
+
+The first two commands write `docs/evidence/lab13-receipt-comparison-local.json` and `-hosted.json`; `report` writes the side-by-side [`lab13-receipt-comparison.md`](docs/evidence/lab13-receipt-comparison.md) with accuracy, wrong values shown as found, latency, and the hosted token cost. The key is read without being shown or saved; `OPENAI_API_KEY` also works. Use `python3` on macOS or Linux.
 
 The checks catch values that are well formed but not on the receipt: a date or odometer reading that is not printed, a cost that is not printed next to the total (for example a subtotal), a shop name that is not printed, and miles entered without a unit. A value that is printed on the receipt but belongs to the wrong field can still pass, which is why the owner reviews every field before saving.
 

@@ -1,6 +1,6 @@
 # ADR 011 Receipt Text Runtime
 
-**Status:** Accepted. SA.A, the on-device runtime, is pinned to `qwen2.5:3b-instruct-q4_K_M` in Ollama 0.5.0 or later. Lab 13 (December 2026) adds the browser draft-review page, value checks, labeled samples, and the evaluation tool. The provider acceptance benchmark against SA.B remains open.
+**Status:** Accepted. SA.A, the on-device runtime, is pinned to `qwen2.5:3b-instruct-q4_K_M` in Ollama 0.5.0 or later. Lab 13 adds the browser draft-review page, value checks, labeled samples, the evaluation tool and a paired comparison tool for SA.B (GPT-6.1 Sol).
 
 The decision concerns where the receipt-text model executes for UC.1 and F.2.2.2. Both options produce an unconfirmed draft for review and leave the C.3 write boundary behind explicit owner confirmation. [Native alternatives](https://cloud.innoslate.com/cornell/p/746/diagrams/asset/318544).
 
@@ -35,11 +35,16 @@ The page fills the form, marks each field found, check, or missing, and saves on
 - `CarCareLog/tests/test_receipt_review.py`: the value checks, including subtotal and injected-instruction cases.
 - `CarCareLog/tools/smoke_test.py`: the primary use case end to end through a separate app process, with a stub runtime in CI or the real model with `--real-model`.
 - `CarCareLog/tools/evaluate_receipts.py` on `CarCareLog/data/receipt-samples.jsonl`: field accuracy, wrong values flagged and not flagged, cold and warm latency, and the installed model build. The report goes to `docs/evidence/lab13-receipt-eval.md`.
+- `CarCareLog/tools/compare_receipt_runtimes.py`: the same receipts through SA.A and SA.B, with token cost for SA.B. The report goes to `docs/evidence/lab13-receipt-comparison.md`.
 
 ## Comparison with SA.B
 
-The comparison used off-host request destinations, one-year incremental cost, and manual continuity during model failure. SA.B uses GPT-6.1 Sol as the hosted comparator. SA.A wins both baseline weight settings. Fifteen additional minutes of local setup put SA.A over the illustrative USD 80 budget. SA.B is then affordable if off-host processing is approved.
+The comparison scores off-host request destinations, one-year incremental cost, manual continuity during model failure, field accuracy and response time. SA.B uses GPT-6.1 Sol as the hosted comparator.
 
-SA.B would require a vendor configuration, credentials, network policy, a policy-approved input subset, a retention review, and a throughput and outage benchmark. Its draft checks and confirmation controls would remain the same. Comparing both candidates on the same labeled receipts is still required before claiming one is more accurate.
+`CarCareLog/tools/compare_receipt_runtimes.py` runs both candidates on the same 20 labeled synthetic receipts with the same prompt, schema and checks, and writes the side-by-side result to `docs/evidence/lab13-receipt-comparison.md`. SA.B is called only by that tool, with `store` false, and is not wired into the application. The hosted run needs an OpenAI API key and has not been done yet, so SA.B is scored at its best case.
+
+With the team's swing weights and E5 scored from 1 at 2 s to 0 at the 60 s timeout, SA.A scores 0.867 on the Lab 13 evaluation. SA.B stays below 0.6 even with perfect accuracy and speed, because SA.A keeps receipt text on the owner's computer. Fifteen more minutes of local setup would put SA.A over the illustrative USD 80 budget, so setup time is tracked.
+
+SA.B would require a vendor configuration, credentials, network policy, a policy-approved input subset, a retention review, and a throughput and outage benchmark. Its draft checks and confirmation controls would remain the same.
 
 Sources: [Ollama generate contract](https://docs.ollama.com/api/generate), [Ollama structured outputs](https://ollama.com/blog/structured-outputs), [Ollama local-mode configuration](https://docs.ollama.com/faq), [qwen2.5 in the Ollama library](https://ollama.com/library/qwen2.5), [hosted GPT-6.1 Sol pricing](https://developers.openai.com/api/docs/models/gpt-6.1-sol).
