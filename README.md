@@ -53,7 +53,7 @@ The model runs on the same computer. The app sends the supplied receipt text or 
 
 ## Demonstration script
 
-This walks the primary use case end to end: receipt text (the query) → the selected vehicle's record store (the data source) → the local language model → the application API → the web page.
+The owner selects a vehicle, reviews a local draft, and confirms a service record. The model receives only the supplied receipt. SQLite receives the reviewed record when the owner confirms.
 
 1. Start the app with the local model turned on, open the page, and select **Load demo data**. The demo vehicle shows 3 records and a total of $359.99.
 2. Select **Add record**, open **Draft from a receipt**, and select **Use sample receipt**. You can instead leave the text empty and choose one JPEG or PNG up to 4 MiB. The photo appears alongside the draft, and every proposed photo-derived field requires a visual check. The sample text is a QuickLube Express oil change on 11/16/2026 at 32,311 mi with a $89.99 total after tax. The same text is in [`demo-receipt.txt`](CarCareLog/data/demo-receipt.txt).
@@ -63,6 +63,8 @@ This walks the primary use case end to end: receipt text (the query) → the sel
 6. Refresh the page to show that the record was saved.
 7. Fallback: stop Ollama (or start the app with `CARCARE_OLLAMA_PORT` set to an unused port) and select **Draft with local AI** again. The page says the AI draft is unavailable, the form is unchanged, and a manual entry still saves.
 
+To try a combined invoice, enter a single $180 total and select both Oil change and Tire rotation. After confirmation, the vehicle has one more record, the total rises by $180, and configured intervals for both services use the new entry. Enter the same date, shop and total in another new record to see the duplicate warning. Review the existing record before deciding whether the second receipt is a separate purchase.
+
 Use a fresh temporary database for each rehearsal. Keep real vehicle records off a shared screen.
 
 ## Reproduce on a clean machine
@@ -70,7 +72,7 @@ Use a fresh temporary database for each rehearsal. Keep real vehicle records off
 You need Git and Python 3.10 or later. Ollama is needed only for the real-model steps.
 
 ```bash
-git clone https://github.com/sysen5151-fall2026/CarCareLog-T18.git
+git clone --branch receipt-review-and-history https://github.com/sysen5151-fall2026/CarCareLog-T18.git
 cd CarCareLog-T18/CarCareLog
 python3 -m unittest discover -s tests -v                # all tests, no model needed
 cd ..
@@ -90,9 +92,9 @@ The smoke test starts the real application as a separate process on a free port 
 
 [`evaluate_receipts.py`](CarCareLog/tools/evaluate_receipts.py) runs every sample through the same adapter and checks as the web page. It unloads the model first so the first request measures a cold start. For each field it reports whether the value was correct and whether a wrong value was flagged for the owner or shown as found. It also reports latency and the model build. The report is written to `docs/evidence/qwen35-text-eval.md` and `.json`.
 
-The following links preserve the earlier Qwen2.5 text run: [Lab 13 results](docs/evidence/lab13-receipt-eval.md) and [per-receipt JSON](docs/evidence/lab13-receipt-eval.json) for the measured Windows run.
+The [November 22 image baseline](docs/evidence/chapter14-qwen35-receipt-images.md) measured 120/120 fields on 20 clean synthetic images before multi-service extraction was added. Those measurements cover the original six fields. The [first-time-owner protocol](docs/verification/receipt-owner-study.md) measures a different outcome: whether a driver can accurately save a photographed receipt in 180 seconds. The earlier Qwen2.5 text results are in the [Lab 13 report](docs/evidence/lab13-receipt-eval.md) and [per-receipt JSON](docs/evidence/lab13-receipt-eval.json).
 
-[`compare_receipt_runtimes.py`](CarCareLog/tools/compare_receipt_runtimes.py) reproduces the two historical text alternatives from ADR 011 on the same 20 synthetic receipts, with the same prompt, draft schema and checks: SA.A, the historical Qwen2.5 3B Instruct in Ollama, and SA.B, the hosted comparator `gpt-6.1-sol` called through the OpenAI Responses API (`https://api.openai.com/v1/responses`, reasoning effort low, `store` false). The hosted model is used only by this tool; the web application never sends receipt text off the computer. On Windows:
+[`compare_receipt_runtimes.py`](CarCareLog/tools/compare_receipt_runtimes.py) can compare the two text alternatives from ADR 011 on the 20 synthetic receipts. SA.A uses Qwen2.5 3B Instruct in Ollama and SA.B uses the hosted `gpt-6.1-sol` comparator. To reproduce the historical configuration, check out its recorded revision so the prompt and schema match. The optional comparison tool sends input to the selected runtime. The web application keeps receipts on the local computer. On Windows:
 
 ```powershell
 py -3 CarCareLog/tools/compare_receipt_runtimes.py local
@@ -121,10 +123,10 @@ The service provider gives receipts to the owner outside the application. There 
 
 | Use case | Current build |
 | --- | --- |
-| UC.1 Maintenance records | Manual create, edit, delete, search, CSV export, and explicit confirmation. Text and image drafting with the local model, per-field checks, and owner review before saving. |
+| UC.1 Maintenance records | Create, edit, delete, search or export confirmed records. A new record can contain several services on one receipt. A new save checks for an existing entry with the same vehicle, date, shop and total. Changing a receipt source invalidates its AI draft. |
 | UC.2 Maintenance reminders | A rule uses a source reference and a mileage or calendar interval. The separate warning window is 500 international miles (804.672 km) or 30 days from a due limit. |
-| UC.3 Maintenance expenses | The dashboard shows recorded total and monthly costs based on confirmed service records. |
-| UC.4 Record questions | Two predefined lookups return the last oil change or total cost with source record IDs. General questions and answers grounded in a vehicle manual remain open. |
+| UC.3 Maintenance expenses | Each confirmed receipt contributes its total once to recorded spending and the monthly chart. Its category applies to the whole receipt. |
+| UC.4 Record questions | Four history lookups cover total spending, last oil change, last tire-rotation mileage and brake spending for the year. Use a source link to open its record. A mixed-service receipt without item prices is identified separately in brake-spending answers. Free-form and vehicle-manual questions remain open. |
 
 ## Design decisions and risks
 

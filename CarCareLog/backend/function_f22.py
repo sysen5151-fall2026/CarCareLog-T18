@@ -27,6 +27,12 @@ class OperationGone(LookupError):
     """The confirmed record identified by a previous save was deleted."""
 
 
+class PossibleDuplicate(ValueError):
+    def __init__(self, matches):
+        super().__init__("Review the existing records with the same date, shop and amount before saving.")
+        self.matches = matches
+
+
 def validate_and_route_owner_request(validated_owner_service_request, *,
                                      owner_authorization_and_confirmation_policy,
                                      configuration_and_maintenance_instructions,
@@ -53,10 +59,18 @@ def validate_and_route_owner_request(validated_owner_service_request, *,
     key = validated_owner_service_request.get("operation_id")
     if key is not None and (not isinstance(key, str) or not re.fullmatch(r"[A-Za-z0-9-]{16,80}", key)):
         raise ValueError("operation_id must be 16 to 80 letters, digits or hyphens.")
+    check_duplicates = validated_owner_service_request.get("check_duplicates", False)
+    reviewed = validated_owner_service_request.get("acknowledged_duplicate_ids", [])
+    if not isinstance(check_duplicates, bool) or not isinstance(reviewed, list) or any(
+            type(record_id) is not int or record_id < 1 for record_id in reviewed):
+        raise ValueError("Duplicate review requires a boolean check_duplicates and positive record IDs.")
+    if reviewed and not check_duplicates:
+        raise ValueError("A duplicate acknowledgement requires check_duplicates.")
+    fields = field_validator(validated_owner_service_request)
     return {"operation": operation, "vehicle_id": car_id,
-            "fields": field_validator(validated_owner_service_request),
+            "fields": fields, "service_items": checked_service_items(validated_owner_service_request, fields[1]),
             "owner_confirmed": validated_owner_service_request.get("owner_confirmed") is True,
-            "operation_id": key}
+            "operation_id": key, "check_duplicates": check_duplicates, "acknowledged_duplicate_ids": reviewed}
 
 
 def coordinate_ai_requests_and_responses(receipt_or_question_request, *,
@@ -79,6 +93,26 @@ def coordinate_ai_requests_and_responses(receipt_or_question_request, *,
 
 
 SERVICE_ITEMS = ("Oil change", "Tire rotation", "Brake service", "Inspection", "Battery", "Other")
+
+
+def checked_service_items(body, primary):
+    """The ordered, owner-confirmed service list for a single invoice."""
+    if "service_items" not in body:
+        return [primary]
+    items = body["service_items"]
+    if (not isinstance(items, list) or not 1 <= len(items) <= len(SERVICE_ITEMS)
+            or items[0] != primary or any(item not in SERVICE_ITEMS for item in items)
+            or len(set(items)) != len(items)):
+        raise ValueError("Choose each supported service once, with the primary service first.")
+    return items
+
+
+def insert_additional_services(db, record_id, items):
+    db.executemany(
+        "INSERT INTO record_additional_services(record_id, position, service_item) VALUES(?,?,?)",
+        ((record_id, position, service) for position, service in enumerate(items[1:], 1)))
+
+
 SERVICE_WORDS = {"Oil change": ("oil",), "Tire rotation": ("rotat",), "Brake service": ("brake",),
                  "Inspection": ("inspect",), "Battery": ("battery",)}
 MILES_TO_KM = Decimal("1.609344")
@@ -219,7 +253,29 @@ def review_receipt_draft(draft, receipt_text, *, services=SERVICE_ITEMS, today=N
     else:
         keep("provider", provider.strip(), "check", "This name is not printed on the receipt. Check it.")
 
-    return {"proposal": proposal, "evidence": evidence}
+    # Multiple performed services share one invoice total. Each is a draft suggestion.
+    # Keep the six scored proposal fields stable for clients and historical evaluations.
+    suggested = [item] if item in services else []
+    additional = draft.get("service_items")
+    if isinstance(additional, list):
+        for service in additional:
+            if service in services and service not in suggested:
+                suggested.append(service)
+    return {"proposal": proposal, "evidence": evidence, "service_items": suggested}
+
+
+def _matching_receipts(db, vehicle_id, fields):
+    # A blank shop is weak evidence: two unknown shops need not be the same shop.
+    provider = " ".join(fields[5].casefold().split())
+    if not provider:
+        return []
+    cursor = db.execute(
+        "SELECT id,service_date,service_item,provider,cost_cents,mileage FROM records "
+        "WHERE vehicle_id=? AND service_date=? AND cost_cents=? ORDER BY id DESC",
+        (vehicle_id, fields[0], fields[4]))
+    columns = [column[0] for column in cursor.description]
+    return [dict(zip(columns, row)) for row in cursor
+            if " ".join(row[3].casefold().split()) == provider]
 
 
 def coordinate_confirmed_record_transaction(confirmed_transaction_request, *,
@@ -238,12 +294,18 @@ def coordinate_confirmed_record_transaction(confirmed_transaction_request, *,
         raise ValueError("Explicit confirmation is required before saving a record.")
     request = confirmed_transaction_request
     key = request.get("operation_id")
+    check_duplicates = request.get("check_duplicates", False)
     fingerprint = None
-    if key is not None:
-        encoded_fields = json.dumps(request["fields"], ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-        fingerprint = hashlib.sha256(encoded_fields).hexdigest()
-        # Check and claim the key under the same writer lock as the record insert.
+    # Serialize duplicate checks with insertion, even for clients without a retry key.
+    if key is not None or check_duplicates:
         record_store.execute("BEGIN IMMEDIATE")
+    if key is not None:
+        # Keep legacy one-service fingerprints valid across an in-place upgrade.
+        fields = request["fields"]
+        additional = request.get("service_items", [fields[1]])[1:]
+        signed_fields = [*fields, sorted(additional)] if additional else fields
+        encoded_fields = json.dumps(signed_fields, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        fingerprint = hashlib.sha256(encoded_fields).hexdigest()
         prior = record_store.execute(
             "SELECT fingerprint, record_id, deleted FROM record_operations WHERE vehicle_id=? AND operation_id=?",
             (request["vehicle_id"], key)).fetchone()
@@ -254,9 +316,17 @@ def coordinate_confirmed_record_transaction(confirmed_transaction_request, *,
             if prior[2]:
                 raise OperationGone("This save already completed and the record was later deleted.")
             return {"id": prior[1]}
+    if check_duplicates:
+        matches = _matching_receipts(record_store, request["vehicle_id"], request["fields"])
+        reviewed = set(request.get("acknowledged_duplicate_ids", []))
+        if any(row["id"] not in reviewed for row in matches):
+            record_store.rollback()
+            raise PossibleDuplicate(matches)
     cursor = record_store.execute(
         "INSERT INTO records(vehicle_id,service_date,service_item,category,mileage,cost_cents,provider,notes) "
         "VALUES(?,?,?,?,?,?,?,?)", (request["vehicle_id"], *request["fields"]))
+    if len(request.get("service_items", [])) > 1:
+        insert_additional_services(record_store, cursor.lastrowid, request["service_items"])
     record_store.execute("UPDATE vehicles SET mileage=max(mileage,?) WHERE id=?",
                          (request["fields"][3], request["vehicle_id"]))
     if key is not None:
@@ -291,7 +361,7 @@ def calculate_maintenance_summary_and_reminders(authorized_records,
         months.setdefault(key, {"Maintenance": 0, "Repair": 0})[row["category"]] += row["cost_cents"]
     for rule in referenced_maintenance_interval_rules:
         item = dict(rule)
-        matching = [r for r in records if r["service_item"] == rule["service_item"]]
+        matching = [r for r in records if rule["service_item"] in r.get("service_items", [r["service_item"]])]
         item.update(status="Needs service history", due_date=None, due_mileage=None, record_id=None)
         if matching:
             last = matching[0]

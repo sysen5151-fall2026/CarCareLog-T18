@@ -17,15 +17,17 @@ from time import perf_counter
 from urllib.parse import parse_qs, urlsplit
 
 if __package__:
+    from .history import history_answer
     from .receipt_runtime import MAX_IMAGE_BASE64, ReceiptRuntimeUnavailable, draft_receipt, validate_image
-    from .function_f22 import (add_months, validate_and_route_owner_request,
+    from .function_f22 import (add_months, checked_service_items, insert_additional_services, validate_and_route_owner_request,
         coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders,
-        coordinate_ai_requests_and_responses, OperationConflict, OperationGone)
+        coordinate_ai_requests_and_responses, OperationConflict, OperationGone, PossibleDuplicate)
 else:
+    from history import history_answer
     from receipt_runtime import MAX_IMAGE_BASE64, ReceiptRuntimeUnavailable, draft_receipt, validate_image
-    from function_f22 import (add_months, validate_and_route_owner_request,
+    from function_f22 import (add_months, checked_service_items, insert_additional_services, validate_and_route_owner_request,
         coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders,
-        coordinate_ai_requests_and_responses, OperationConflict, OperationGone)
+        coordinate_ai_requests_and_responses, OperationConflict, OperationGone, PossibleDuplicate)
 
 LOCAL_POLICY = {"mode": "local_demo", "require_confirmation": True}
 
@@ -54,6 +56,13 @@ def init_db():
             service_date TEXT NOT NULL, service_item TEXT NOT NULL,
             category TEXT NOT NULL, mileage INTEGER NOT NULL, cost_cents INTEGER NOT NULL,
             provider TEXT NOT NULL, notes TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS records_by_receipt
+            ON records(vehicle_id, service_date, cost_cents);
+        CREATE TABLE IF NOT EXISTS record_additional_services (
+            record_id INTEGER NOT NULL REFERENCES records(id) ON DELETE CASCADE,
+            position INTEGER NOT NULL, service_item TEXT NOT NULL,
+            PRIMARY KEY (record_id, position), UNIQUE (record_id, service_item)
         );
         CREATE TABLE IF NOT EXISTS reminders (
             id INTEGER PRIMARY KEY, vehicle_id INTEGER NOT NULL REFERENCES vehicles(id),
@@ -117,9 +126,21 @@ def vehicle(db, vehicle_id):
 
 
 def all_records(db, vehicle_id):
-    return [dict(r) for r in db.execute(
-        "SELECT * FROM records WHERE vehicle_id=? ORDER BY service_date DESC, mileage DESC, id DESC",
-        (vehicle_id,))]
+    rows = db.execute("""
+        SELECT r.*, s.service_item AS additional_service FROM records r
+        LEFT JOIN record_additional_services s ON s.record_id = r.id
+        WHERE r.vehicle_id = ? ORDER BY r.service_date DESC, r.mileage DESC, r.id DESC, s.position
+    """, (vehicle_id,))
+    records = {}
+    for row in rows:
+        if row["id"] not in records:
+            record = dict(row)
+            del record["additional_service"]
+            record["service_items"] = [record["service_item"]]
+            records[row["id"]] = record
+        if row["additional_service"] is not None:
+            records[row["id"]]["service_items"].append(row["additional_service"])
+    return list(records.values())
 
 
 def dashboard_inputs(db, vehicle_id):
@@ -142,7 +163,7 @@ def csv_export(records):
     writer = csv.writer(output)
     writer.writerow(["Record ID", "Date", "Service", "Category", "Mileage (km)", "Cost (USD)", "Provider", "Notes"])
     for r in records:
-        cells = [r["id"], r["service_date"], r["service_item"], r["category"], r["mileage"],
+        cells = [r["id"], r["service_date"], " + ".join(r.get("service_items", [r["service_item"]])), r["category"], r["mileage"],
                  f'{r["cost_cents"] / 100:.2f}', r["provider"], r["notes"]]
         writer.writerow(["'" + c if isinstance(c, str) and c.lstrip().startswith(("=", "+", "-", "@")) else c for c in cells])
     return output.getvalue().encode("utf-8-sig")
@@ -235,7 +256,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply({'status': 'unavailable', 'reason': 'runtime_unavailable', 'vehicle_id': car_id,
                 'proposal': None, 'message': 'AI draft unavailable. Use manual entry.'}, 503)
         return self.reply({'status': 'needs_review', 'vehicle_id': car_id, 'owner_confirmed': False,
-            'proposal': reviewed['proposal'], 'evidence': reviewed['evidence'], 'model': model,
+            'proposal': reviewed['proposal'], 'evidence': reviewed['evidence'],
+            'service_items': reviewed['service_items'], 'model': model,
             'elapsed_ms': round((perf_counter() - started) * 1000)})
 
     def dispatch(self):
@@ -265,6 +287,10 @@ class Handler(BaseHTTPRequestHandler):
                         record_store=db, field_validator=record_fields)
                     keys = ['service_date', 'service_item', 'category', 'mileage', 'cost_cents', 'provider', 'notes']
                     record = dict(zip(keys, request['fields']))
+                    record['service_items'] = request['service_items']
+                    for option in ('operation_id', 'check_duplicates', 'acknowledged_duplicate_ids'):
+                        if option in body:
+                            record[option] = request[option]
                     record['cost'] = f"{record.pop('cost_cents') / 100:.2f}"
                     return self.reply({'operation':request['operation'], 'vehicle_id':request['vehicle_id'],
                         'owner_confirmed':request['owner_confirmed'], 'record':record})
@@ -324,18 +350,8 @@ class Handler(BaseHTTPRequestHandler):
                 data = dashboard(db, car_id)
                 if path == "/api/export":
                     return self.reply(csv_export(data["records"]), content_type="text/csv; charset=utf-8", filename=f"carcarelog-{car_id}.csv")
-                question = query.get("question", [""])[0]
-                records = data["records"]
-                if question == "total":
-                    answer = f'Total recorded spending: ${data["total_cents"] / 100:.2f} across {len(records)} records.'
-                    sources = [r["id"] for r in records]
-                elif question == "oil":
-                    oil = next((r for r in records if r["service_item"] == "Oil change"), None)
-                    answer = f'Last recorded oil change: {oil["service_date"]}, at {oil["mileage"]:,} km.' if oil else "Insufficient evidence: no oil-change record is available."
-                    sources = [oil["id"]] if oil else []
-                else:
-                    raise ValueError("Choose a supported history question.")
-                return self.reply({"answer": answer, "record_ids": sources, "method": "Recorded-data lookup"})
+                return self.reply(history_answer(query.get("question", [""])[0], data["records"],
+                    year=query.get("year", [None])[0], today=date.today()))
             if path == "/api/records" and self.command == "POST":
                 with self.measure("app_validate_and_route"):
                     request = validate_and_route_owner_request(body,
@@ -355,8 +371,7 @@ class Handler(BaseHTTPRequestHandler):
             match = re.fullmatch(r"/api/records/(\d+)", path)
             if match and self.command in ("PUT", "DELETE"):
                 rec_id = int(match[1])
-                if self.command == "DELETE":
-                    db.execute("BEGIN IMMEDIATE")
+                db.execute("BEGIN IMMEDIATE")
                 row = db.execute("SELECT * FROM records WHERE id=?", (rec_id,)).fetchone()
                 if row is None:
                     raise LookupError("Record not found.")
@@ -368,7 +383,16 @@ class Handler(BaseHTTPRequestHandler):
                     if body.get("owner_confirmed") is not True:
                         raise ValueError("Explicit confirmation is required before updating a record.")
                     fields = record_fields(body)
+                    items = checked_service_items(body, fields[1])
                     db.execute("UPDATE records SET service_date=?,service_item=?,category=?,mileage=?,cost_cents=?,provider=?,notes=? WHERE id=?", (*fields, rec_id))
+                    if "service_items" in body:
+                        db.execute("DELETE FROM record_additional_services WHERE record_id=?", (rec_id,))
+                        insert_additional_services(db, rec_id, items)
+                    else:
+                        # A legacy editor knows only the primary. Keep additional confirmed work
+                        # and remove a repeated item if the editor promotes it to primary.
+                        db.execute("DELETE FROM record_additional_services WHERE record_id=? AND service_item=?",
+                                   (rec_id, fields[1]))
                     db.execute("UPDATE vehicles SET mileage=max(mileage,?) WHERE id=?", (fields[3], row["vehicle_id"]))
                 db.commit()
                 return self.reply({"ok": True})
@@ -397,6 +421,8 @@ class Handler(BaseHTTPRequestHandler):
         self.timings = {}
         try:
             self.dispatch()
+        except PossibleDuplicate as exc:
+            self.reply({"code": "possible_duplicate", "error": str(exc), "matches": exc.matches}, 409)
         except OperationConflict as exc:
             self.reply({"error": str(exc)}, 409)
         except OperationGone as exc:

@@ -4,13 +4,13 @@ This prototype implements the core manual workflow in the team's stakeholder req
 
 | Requirement | Prototype coverage | Evidence / remaining work |
 | --- | --- | --- |
-| SR01 | Implemented | Add/edit/delete selected-vehicle records. API lifecycle test. |
+| SR01 | Implemented | Add, edit or delete a single- or multi-service record for the selected vehicle. New receipt entries can be compared with earlier records before saving. |
 | SR02 | Implemented for core workflow | Current mileage and descending service timeline; client-side service/provider search and date-range filters. |
 | SR03–SR05 | Partial | The local vision model drafts from text or one JPEG/PNG. The app checks text provenance and flags all image-derived values for human comparison before Confirm & save. A timed usability study against the 180-second criterion remains open. |
 | SR06 | Partial | User supplies the manual reference for each interval. The app does not verify or retrieve that reference. |
 | SR07–SR08 | Implemented | Recompute on mileage changes and record add/edit/delete. Mileage/time due and upcoming states tested. |
-| SR09 | Implemented | Exact-cent total and monthly costs split by Maintenance/Repair category. |
-| SR10–SR11 | Partial | Two fixed history queries cite record IDs or state insufficient evidence. Natural-language AI and manual-grounded answers are pending. |
+| SR09 | Implemented | Exact-cent total and monthly spending use the receipt-level Maintenance/Repair category. A multi-service invoice contributes its total once. |
+| SR10–SR11 | Partial | Four fixed lookups cite source records for total spending, last oil change, tire-rotation mileage and annual brake spending. A mixed invoice with no separate brake price leaves the exact brake total unknown. Free-form and manual-grounded answers are pending. |
 | SR12 | Implemented | CSV exports all confirmed records for the selected vehicle; Unicode and spreadsheet formula escaping tested. |
 | SR13 | Pending | Local loopback server only. No accounts, owner authorization or multi-user access control. |
 | SR14 | Pending | No seven-day availability measurement has been performed. |

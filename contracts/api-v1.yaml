@@ -69,11 +69,18 @@
             }
           },
           "409": {
-            "description": "A previous save used this operation ID for different fields on this vehicle.",
+            "description": "Possible duplicate requires review, or an operation ID was reused with different record fields.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PossibleDuplicate"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
                 }
               }
             }
@@ -321,6 +328,33 @@
           },
           "404": {
             "description": "Selected entity does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Possible duplicate requires review, or an operation ID was reused with different record fields.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PossibleDuplicate"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The saved record for this operation ID was subsequently deleted.",
             "content": {
               "application/json": {
                 "schema": {
@@ -943,8 +977,20 @@
               "type": "string",
               "enum": [
                 "oil",
-                "total"
+                "total",
+                "brake_spending",
+                "tire_rotation"
               ]
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "description": "Calendar year for brake_spending. Defaults to the current local year.",
+            "schema": {
+              "type": "string",
+              "pattern": "^(?!0000)[0-9]{4}$"
             }
           }
         ]
@@ -1106,6 +1152,9 @@
           "notes": {
             "type": "string",
             "maxLength": 2000
+          },
+          "service_items": {
+            "$ref": "#/components/schemas/ServiceItems"
           }
         }
       },
@@ -1141,6 +1190,19 @@
                 "type": "string",
                 "pattern": "^[A-Za-z0-9-]{16,80}$",
                 "description": "Optional per-vehicle token for replaying the same confirmed create request."
+              },
+              "check_duplicates": {
+                "type": "boolean",
+                "default": false,
+                "description": "Enable a review before creating a record with the same vehicle, date, shop and exact total. The UI enables this on all new saves."
+              },
+              "acknowledged_duplicate_ids": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "description": "IDs explicitly reviewed as separate receipts. Resend under the same operation ID. New matches trigger another review."
               }
             }
           }
@@ -1169,6 +1231,24 @@
               },
               "owner_confirmed": {
                 "type": "boolean"
+              },
+              "operation_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9-]{16,80}$",
+                "description": "Optional per-vehicle token for replaying the same confirmed create request."
+              },
+              "check_duplicates": {
+                "type": "boolean",
+                "default": false,
+                "description": "Enable a review before creating a record with the same vehicle, date, shop and exact total. The UI enables this on all new saves."
+              },
+              "acknowledged_duplicate_ids": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "description": "IDs explicitly reviewed as separate receipts. Resend under the same operation ID. New matches trigger another review."
               }
             }
           }
@@ -1197,7 +1277,34 @@
             "type": "boolean"
           },
           "record": {
-            "$ref": "#/components/schemas/RecordInput"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RecordInput"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9-]{16,80}$",
+                    "description": "Optional per-vehicle token for replaying the same confirmed create request."
+                  },
+                  "check_duplicates": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable a review before creating a record with the same vehicle, date, shop and exact total. The UI enables this on all new saves."
+                  },
+                  "acknowledged_duplicate_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "description": "IDs explicitly reviewed as separate receipts. Resend under the same operation ID. New matches trigger another review."
+                  }
+                }
+              }
+            ]
           }
         }
       },
@@ -1270,7 +1377,8 @@
                 "service_date",
                 "service_item",
                 "mileage",
-                "cost_cents"
+                "cost_cents",
+                "service_items"
               ],
               "properties": {
                 "id": {
@@ -1291,6 +1399,9 @@
                 },
                 "cost_cents": {
                   "type": "integer"
+                },
+                "service_items": {
+                  "$ref": "#/components/schemas/ServiceItems"
                 }
               }
             }
@@ -1581,7 +1692,8 @@
           "proposal",
           "evidence",
           "model",
-          "elapsed_ms"
+          "elapsed_ms",
+          "service_items"
         ],
         "description": "A checked, unconfirmed draft. No record was created. Saving requires POST /api/records with owner_confirmed true.",
         "properties": {
@@ -1695,6 +1807,23 @@
           "elapsed_ms": {
             "type": "integer",
             "description": "Service-side time for the model call and checks."
+          },
+          "service_items": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "Oil change",
+                "Tire rotation",
+                "Brake service",
+                "Inspection",
+                "Battery",
+                "Other"
+              ]
+            },
+            "maxItems": 6,
+            "uniqueItems": true,
+            "description": "Unconfirmed suggestions for performed services, including the primary item when available. Check against the source."
           }
         }
       },
@@ -1725,6 +1854,90 @@
         "minLength": 4,
         "maxLength": 5592408,
         "description": "Standard base64-encoded JPEG or PNG, up to 4 MiB decoded. Sent only to the loopback Ollama runtime."
+      },
+      "ServiceItems": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "Oil change",
+            "Tire rotation",
+            "Brake service",
+            "Inspection",
+            "Battery",
+            "Other"
+          ]
+        },
+        "minItems": 1,
+        "maxItems": 6,
+        "uniqueItems": true,
+        "description": "All performed service types on one invoice. The first is service_item. The full amount is counted once."
+      },
+      "PossibleDuplicate": {
+        "type": "object",
+        "required": [
+          "error",
+          "code",
+          "matches"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "possible_duplicate"
+            ]
+          },
+          "matches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "service_date",
+                "service_item",
+                "provider",
+                "cost_cents",
+                "mileage"
+              ],
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "service_date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "service_item": {
+                  "type": "string",
+                  "enum": [
+                    "Oil change",
+                    "Tire rotation",
+                    "Brake service",
+                    "Inspection",
+                    "Battery",
+                    "Other"
+                  ]
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "cost_cents": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "mileage": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "minItems": 1
+          }
+        }
       }
     }
   },
