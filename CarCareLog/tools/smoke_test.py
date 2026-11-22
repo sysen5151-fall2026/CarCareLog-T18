@@ -11,8 +11,8 @@ The stub stands in only for Ollama's /api/generate; everything else is the produ
 """
 
 import argparse
-from contextlib import closing, contextmanager
-from http.client import HTTPConnection
+from contextlib import ExitStack, closing, contextmanager
+from http.client import HTTPConnection, HTTPException
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
@@ -31,6 +31,8 @@ DEMO_RECEIPT = ROOT / "CarCareLog" / "data" / "demo-receipt.txt"
 SAMPLES = ROOT / "CarCareLog" / "data" / "receipt-samples.jsonl"
 sys.path.insert(0, str(ROOT / "CarCareLog"))
 from backend.receipt_runtime import PINNED_MODEL, ReceiptRuntimeUnavailable, runtime_details  # noqa: E402
+
+STARTUP_TIMEOUT = 120
 
 
 def free_port():
@@ -71,7 +73,7 @@ class StubRuntime(BaseHTTPRequestHandler):
 def stub_runtime():
     with open(SAMPLES, encoding="utf-8") as handle:
         StubRuntime.drafts = {s["text"].strip(): s["ideal_draft"] for s in map(json.loads, handle) if s}
-    server = ThreadingHTTPServer(("127.0.0.1", free_port()), StubRuntime)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), StubRuntime)
     Thread(target=server.serve_forever, daemon=True).start()
     try:
         yield server.server_port
@@ -87,29 +89,45 @@ class App:
         self.process = None
 
     def __enter__(self):
-        self.log = tempfile.TemporaryFile(mode="w+", encoding="utf-8")
-        self.process = subprocess.Popen([sys.executable, str(APP)], env=self.env, cwd=ROOT,
-                                        stdout=self.log, stderr=subprocess.STDOUT)
-        deadline = time.monotonic() + 20
-        while time.monotonic() < deadline:
-            try:
-                self.call("GET", "/api/vehicles")
-                return self
-            except OSError:
+        with ExitStack() as resources:
+            log = resources.enter_context(tempfile.TemporaryFile(mode="w+", encoding="utf-8", errors="replace"))
+            self.process = subprocess.Popen([sys.executable, "-u", str(APP)], env=self.env, cwd=ROOT,
+                                            stdout=log, stderr=subprocess.STDOUT)
+            resources.callback(self._stop)
+            deadline = time.monotonic() + STARTUP_TIMEOUT
+            last_error = "No readiness response received."
+            while (remaining := deadline - time.monotonic()) > 0:
                 if self.process.poll() is not None:
-                    self.log.seek(0)
-                    raise SystemExit("The application exited:\n" + self.log.read())
-                time.sleep(0.2)
-        raise SystemExit("The application did not start within 20 seconds.")
+                    break
+                try:
+                    status, _ = self.call("GET", "/api/vehicles", timeout=min(2, remaining))
+                    if status == 200:
+                        self._resources = resources.pop_all()
+                        return self
+                    last_error = f"GET /api/vehicles returned HTTP {status}."
+                except (OSError, HTTPException, ValueError) as exc:
+                    last_error = f"{type(exc).__name__}: {exc}"
+                time.sleep(min(0.2, max(0, deadline - time.monotonic())))
+
+            code = self.process.poll()
+            reason = (f"The application did not start within {STARTUP_TIMEOUT} seconds." if code is None
+                      else f"The application exited with status {code}.")
+            self._stop()
+            log.seek(0)
+            raise SystemExit(f"{reason}\nLast readiness check: {last_error}\n"
+                             f"Application log:\n{log.read().strip() or '(empty)'}")
+
+    def _stop(self):
+        if self.process.poll() is None:
+            self.process.terminate()
+            try:
+                self.process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+                self.process.wait()
 
     def __exit__(self, *_):
-        self.process.terminate()
-        try:
-            self.process.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            self.process.kill()
-            self.process.wait()
-        self.log.close()
+        self._resources.close()
 
     def call(self, method, path, payload=None, timeout=180):
         with closing(HTTPConnection("127.0.0.1", self.port, timeout=timeout)) as conn:
