@@ -3,7 +3,7 @@
   "info": {
     "title": "CarCareLog local prototype contract",
     "version": "0.4.0",
-    "description": "Internal HTTP adapters expose the modeled in-process functions. The public local record endpoint supports the Chapter 10 baseline and opt-in bundled response. Lab 13 adds the browser receipt-draft route, which calls the pinned local model and returns a checked draft for owner review."
+    "description": "Internal HTTP adapters expose the modeled in-process functions. The public local record endpoint supports the Chapter 10 baseline and opt-in bundled response. Lab 13 adds the browser receipt-draft route, which calls the pinned local model and returns a checked draft for owner review. The vision build accepts an image on the same review-only endpoint."
   },
   "servers": [
     {
@@ -157,7 +157,7 @@
     "/api/receipt-draft": {
       "post": {
         "operationId": "draftRecordFromReceiptText",
-        "summary": "Draft a service record from pasted receipt text with the pinned local model",
+        "summary": "Draft a service record from receipt text or one JPEG/PNG with the local model",
         "x-function-id": "F.2.2.2",
         "x-decomposes": "F.2.2",
         "x-internal": false,
@@ -1374,9 +1374,14 @@
           "receipt_text": {
             "type": "string",
             "maxLength": 4000,
-            "description": "Required for receipt drafts when the local runtime is enabled. Plain text only."
+            "description": "Pasted receipt text. For a receipt draft supply exactly one of receipt_text or receipt_image.",
+            "minLength": 1
+          },
+          "receipt_image": {
+            "$ref": "#/components/schemas/ReceiptImage"
           }
-        }
+        },
+        "description": "kind=receipt takes exactly one receipt source; kind=question is currently unavailable."
       },
       "AIUnavailable": {
         "type": "object",
@@ -1516,8 +1521,7 @@
       "ReceiptDraftRequest": {
         "type": "object",
         "required": [
-          "vehicle_id",
-          "receipt_text"
+          "vehicle_id"
         ],
         "properties": {
           "vehicle_id": {
@@ -1528,9 +1532,24 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 4000,
-            "description": "Pasted receipt text. Plain text only; sent to the local model as data."
+            "description": "Pasted receipt text. For a receipt draft supply exactly one of receipt_text or receipt_image."
+          },
+          "receipt_image": {
+            "$ref": "#/components/schemas/ReceiptImage"
           }
-        }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "receipt_text"
+            ]
+          },
+          {
+            "required": [
+              "receipt_image"
+            ]
+          }
+        ]
       },
       "FieldEvidence": {
         "type": "object",
@@ -1699,6 +1718,13 @@
             "description": "Synthetic demonstration receipt text."
           }
         }
+      },
+      "ReceiptImage": {
+        "type": "string",
+        "format": "byte",
+        "minLength": 4,
+        "maxLength": 5592408,
+        "description": "Standard base64-encoded JPEG or PNG, up to 4 MiB decoded. Sent only to the loopback Ollama runtime."
       }
     }
   },

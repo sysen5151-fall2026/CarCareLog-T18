@@ -81,7 +81,13 @@ function editReminder(rule) {
 // against the receipt text, and the owner reviews every field before Confirm & save.
 const draftFields = ['service_date', 'mileage', 'service_item', 'category', 'cost', 'provider'];
 const fieldLabels = {service_date: 'service date', mileage: 'mileage', service_item: 'service item', category: 'category', cost: 'cost', provider: 'provider'};
-let assist = {enabled: false, model: null, sample: ''}, draftTimer;
+let assist = {enabled: false, model: null, sample: ''}, draftTimer, draftController, previewUrl;
+function clearReceiptPreview() {
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = null;
+  $('receipt-preview').removeAttribute('src');
+  $('receipt-preview').hidden = true;
+}
 function setNote(field, status, text) {
   const note = document.querySelector(`[data-note="${field}"]`), input = $('record-form').elements[field];
   note.textContent = text; note.className = 'field-note' + (status ? ' ' + status : '');
@@ -89,7 +95,10 @@ function setNote(field, status, text) {
   input.classList.toggle('needs-entry', status === 'missing');
 }
 function resetDraft(show) {
+  draftController?.abort();
   clearInterval(draftTimer);
+  clearReceiptPreview();
+  $('receipt-image').value = '';
   $('receipt-assist').hidden = !show;
   $('receipt-assist').open = false;
   $('receipt-text').value = '';
@@ -107,31 +116,59 @@ function applyDraft(result) {
     const label = {found: '✓ ', check: 'Check: ', missing: 'Missing: '}[evidence.status];
     setNote(field, evidence.status, label + evidence.note);
   }
-  if (!form.elements.notes.value) form.elements.notes.value = `Drafted from receipt text by local AI (${result.model}); reviewed by owner.`;
+  if (!form.elements.notes.value) form.elements.notes.value = `Drafted from receipt by local AI (${result.model}).`;
   const flagged = draftFields.filter(f => result.evidence[f].status !== 'found');
   $('draft-banner').textContent = `AI draft, not saved yet. ${flagged.length ? `Check ${flagged.length} highlighted field${flagged.length > 1 ? 's' : ''} (${flagged.map(f => fieldLabels[f]).join(', ')}), ` : 'Check every field, '}then select Confirm & save.`;
   $('draft-banner').hidden = false;
 }
 async function draftReceipt() {
   const text = $('receipt-text').value.trim();
-  if (!text) { $('draft-status').textContent = 'Paste receipt text first.'; $('draft-status').className = 'draft-status error'; return; }
+  const file = $('receipt-image').files[0], vehicleId = currentId;
+  if (Boolean(file) === Boolean(text)) {
+    $('draft-status').textContent = 'Choose one receipt image or paste receipt text.';
+    $('draft-status').className = 'draft-status error';
+    return;
+  }
+  if (file && (file.size > 4 * 1024 * 1024 || !['image/jpeg', 'image/png'].includes(file.type))) {
+    $('draft-status').textContent = 'Choose a JPEG or PNG up to 4 MiB.';
+    $('draft-status').className = 'draft-status error';
+    return;
+  }
+  const controller = new AbortController();
+  draftController = controller;
   const started = Date.now(), button = $('draft-receipt');
   button.disabled = true;
   $('draft-status').className = 'draft-status';
   const tick = () => { $('draft-status').textContent = `Drafting on this computer with ${assist.model}… ${Math.round((Date.now() - started) / 1000)} s (the first draft loads the model and can take longer)`; };
   tick(); draftTimer = setInterval(tick, 1000);
   try {
-    const response = await fetch('/api/receipt-draft', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({vehicle_id: currentId, receipt_text: text})});
+    let source = {receipt_text: text};
+    if (file) {
+      const url = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Could not read the receipt image.'));
+        reader.readAsDataURL(file);
+      });
+      source = {receipt_image: url.split(',')[1]};
+    }
+    const response = await fetch('/api/receipt-draft', {method: 'POST', signal: controller.signal,
+      headers: {'Content-Type': 'application/json'}, body: JSON.stringify({vehicle_id: vehicleId, ...source})});
     const result = await response.json();
+    if (controller.signal.aborted || vehicleId !== currentId) return;
     if (!response.ok) throw new Error(result.message || result.error || 'AI draft unavailable. Use manual entry.');
     applyDraft(result);
     $('draft-status').textContent = `Draft ready in ${(result.elapsed_ms / 1000).toFixed(1)} s from ${result.model}. Review the fields below.`;
   } catch (error) {
+    if (controller.signal.aborted) return;
     $('draft-status').textContent = `${error.message} Your form is unchanged, and you can still enter and save the record yourself.`;
     $('draft-status').className = 'draft-status error';
   } finally {
-    clearInterval(draftTimer);
-    button.disabled = !assist.enabled;
+    if (draftController === controller) {
+      clearInterval(draftTimer);
+      button.disabled = !assist.enabled;
+      draftController = null;
+    }
   }
 }
 async function loadAssist() {
@@ -143,7 +180,38 @@ async function loadAssist() {
   $('sample-receipt').hidden = !assist.sample;
 }
 $('draft-receipt').onclick = draftReceipt;
-$('sample-receipt').onclick = () => { $('receipt-text').value = assist.sample; $('receipt-text').focus(); };
+function cancelDraft() {
+  if (draftController) {
+    draftController.abort();
+    clearInterval(draftTimer);
+    $('draft-status').textContent = '';
+    $('draft-receipt').disabled = !assist.enabled;
+  }
+}
+$('record-dialog').addEventListener('close', () => {
+  cancelDraft();
+  clearReceiptPreview();
+  $('receipt-image').value = '';
+  $('receipt-text').value = '';
+});
+$('receipt-image').addEventListener('change', () => {
+  cancelDraft();
+  clearReceiptPreview();
+  const file = $('receipt-image').files[0];
+  if (file && file.size <= 4 * 1024 * 1024 && ['image/jpeg', 'image/png'].includes(file.type)) {
+    previewUrl = URL.createObjectURL(file);
+    $('receipt-preview').src = previewUrl;
+    $('receipt-preview').hidden = false;
+  }
+});
+$('receipt-text').addEventListener('input', cancelDraft);
+$('sample-receipt').onclick = () => {
+  cancelDraft();
+  clearReceiptPreview();
+  $('receipt-image').value = '';
+  $('receipt-text').value = assist.sample;
+  $('receipt-text').focus();
+};
 $('record-form').addEventListener('input', event => {
   const field = event.target.name;
   if (draftFields.includes(field) && !$('draft-banner').hidden) setNote(field, 'edited', 'Edited by you.');

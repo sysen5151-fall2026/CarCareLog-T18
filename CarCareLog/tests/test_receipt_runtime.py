@@ -135,6 +135,47 @@ class ReceiptRuntimeTests(unittest.TestCase):
         stored = self.dashboard(car_id)['records'][0]
         self.assertEqual((stored['id'], stored['mileage'], stored['cost_cents']), (saved['id'], 52000, 8999))
 
+    def test_photo_draft_sends_pixels_only_and_requires_visual_review_and_confirmation(self):
+        car_id = self.car(name='Private Corolla')
+        # Self-contained, synthetic one-pixel PNG for the transport fixture.
+        photo = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/aWQAAAAASUVORK5CYII='
+        requests = self.start_runtime(dict(service_date='2026-01-02', service_item='Oil change',
+                                           category='Maintenance', odometer_value=10000, odometer_unit='mi',
+                                           cost='99.99', provider=None))
+        with patch.dict(test_app.app.os.environ, {'CARCARE_OLLAMA_MODEL': receipt_runtime.PINNED_MODEL}):
+            status, result = self.call('/api/receipt-draft', 'POST', {'vehicle_id': car_id, 'receipt_image': photo})
+        self.assertEqual((status, result['status'], result['owner_confirmed']), (200, 'needs_review', False))
+        path, payload = requests[0]
+        self.assertEqual(path, '/api/generate')
+        self.assertEqual(payload['images'], [photo])
+        self.assertEqual(payload['model'], 'qwen3.5:4b')
+        self.assertFalse(payload['think'])
+        self.assertNotIn('vehicle_id', payload)
+        self.assertNotIn('Private Corolla', payload['prompt'])
+        self.assertEqual({k: v['status'] for k, v in result['evidence'].items()},
+                         dict(service_date='check', service_item='check', category='check', mileage='check',
+                              cost='check', provider='missing'))
+        self.assertEqual(result['proposal']['mileage'], 16093)
+        self.assertEqual(self.dashboard(car_id)['records'], [])
+        self.assertEqual(self.record(car_id, **result['proposal'], owner_confirmed=False)[0], 400)
+        self.assertEqual(self.record(car_id, **{**result['proposal'], 'provider':'Owner-checked shop'},
+                                     owner_confirmed=True)[0], 201)
+        stored = self.dashboard(car_id)['records'][0]
+        self.assertEqual(stored['provider'], 'Owner-checked shop')
+        self.assertNotIn(photo, json.dumps(stored))
+
+    def test_invalid_oversized_or_mixed_photo_input_never_reaches_runtime(self):
+        car_id = self.car()
+        requests = self.start_runtime(dict.fromkeys(receipt_runtime.DRAFT_FIELDS))
+        for source in ({'receipt_image': 'not base64'}, {'receipt_image': 'aGVsbG8='},
+                       {'receipt_image': 'A' * (receipt_runtime.MAX_IMAGE_BASE64 + 4)},
+                       {'receipt_image': 'aGVsbG8=', 'receipt_text': 'two sources'}):
+            status, result = self.call('/api/receipt-draft', 'POST', {'vehicle_id':car_id, **source})
+            self.assertEqual(status, 400)
+            self.assertIn('error', result)
+        self.assertEqual(requests, [])
+        self.assertEqual(self.dashboard(car_id)['records'], [])
+
     def test_receipt_draft_and_unavailable_responses_match_the_contract(self):
         contract = json.loads((Path(__file__).resolve().parents[2] / 'contracts' / 'api-v1.yaml').read_text(encoding='utf-8'))
         schemas = contract['components']['schemas']
@@ -198,7 +239,8 @@ class OperatorConfigurationTests(unittest.TestCase):
             with patch.dict(receipt_runtime.os.environ, {'CARCARE_OLLAMA_TIMEOUT': bad}):
                 self.assertEqual(receipt_runtime._env_number('CARCARE_OLLAMA_TIMEOUT', '60'), 60.0)
         request = receipt_runtime.build_request('text', receipt_runtime.PINNED_MODEL)
-        self.assertEqual(request['model'], 'qwen2.5:3b-instruct-q4_K_M')
+        self.assertEqual(request['model'], 'qwen3.5:4b')
+        self.assertFalse(request['think'])
         self.assertEqual(receipt_runtime.RUNTIME_HOST, '127.0.0.1')
 
 

@@ -185,12 +185,12 @@ def render_report(local, hosted):
         "# Lab 13 receipt runtime comparison",
         "",
         "Both runtimes drafted the same 20 synthetic receipts with the same prompt, draft schema and F.2.2.2 checks. "
-        "The local runtime is the one the web application uses. The hosted runtime was called only by "
+        "The local runtime reproduces the original Lab 13 text baseline. The hosted runtime was called only by "
         "`CarCareLog/tools/compare_receipt_runtimes.py`, with `store` set to false, and is not wired into the application.",
         "",
         "| | Local (SA.A) | Hosted (SA.B) |",
         "|---|---|---|",
-        f"| Model | `{runtime.PINNED_MODEL}` in Ollama {local.get('ollama_version')} | `{hosted.get('model')}`, reasoning effort "
+        f"| Model | `{local['model']}` in Ollama {local.get('ollama_version')} | `{hosted.get('model')}`, reasoning effort "
         f"{hosted.get('reasoning_effort')} |",
         f"| Where it ran | This computer, loopback only | {hosted.get('endpoint')} |",
         f"| Run (UTC) | {local.get('started_utc')} | {hosted.get('started_utc')} |",
@@ -229,7 +229,7 @@ def render_report(local, hosted):
     for row in local["results"]:
         lines.append(f"| {row['id']} | {row['focus']} | {_wrong(row)} | {_wrong(hosted_rows[row['id']])} |")
     lines += ["", "## Reproduce", "", "```",
-              "ollama pull " + runtime.PINNED_MODEL,
+              "ollama pull " + runtime.LAB13_MODEL,
               "py -3 CarCareLog/tools/compare_receipt_runtimes.py local",
               "py -3 CarCareLog/tools/compare_receipt_runtimes.py hosted --prompt-key",
               "py -3 CarCareLog/tools/compare_receipt_runtimes.py report", "```", ""]
@@ -260,16 +260,16 @@ def main(argv=None):
         drafter = hosted_drafter(key)
     else:
         try:
-            run = runtime.runtime_details(runtime.PINNED_MODEL)
+            run = runtime.runtime_details(runtime.LAB13_MODEL)
         except runtime.ReceiptRuntimeUnavailable:
-            raise SystemExit(f"Ollama is not reachable or the model is missing. Run: ollama pull {runtime.PINNED_MODEL}")
+            raise SystemExit(f"Ollama is not reachable or the model is missing. Run: ollama pull {runtime.LAB13_MODEL}")
         if not run["weights_digest_matches_pin"]:
             raise SystemExit("The installed local weights do not match the pinned digest.")
-        run["model"] = runtime.PINNED_MODEL
-        unload(runtime.PINNED_MODEL)
+        run["model"] = runtime.LAB13_MODEL
+        unload(runtime.LAB13_MODEL)
 
         def drafter(text):
-            return runtime.draft_receipt(text, runtime.PINNED_MODEL)
+            return runtime.draft_receipt(text, runtime.LAB13_MODEL)
 
     run["provider"] = args.provider
     run["samples"] = SAMPLES.name

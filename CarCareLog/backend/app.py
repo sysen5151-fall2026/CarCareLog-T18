@@ -17,12 +17,12 @@ from time import perf_counter
 from urllib.parse import parse_qs, urlsplit
 
 if __package__:
-    from .receipt_runtime import ReceiptRuntimeUnavailable, draft_receipt
+    from .receipt_runtime import MAX_IMAGE_BASE64, ReceiptRuntimeUnavailable, draft_receipt, validate_image
     from .function_f22 import (add_months, validate_and_route_owner_request,
         coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders,
         coordinate_ai_requests_and_responses, OperationConflict, OperationGone)
 else:
-    from receipt_runtime import ReceiptRuntimeUnavailable, draft_receipt
+    from receipt_runtime import MAX_IMAGE_BASE64, ReceiptRuntimeUnavailable, draft_receipt, validate_image
     from function_f22 import (add_months, validate_and_route_owner_request,
         coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders,
         coordinate_ai_requests_and_responses, OperationConflict, OperationGone)
@@ -196,10 +196,10 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
-    def body(self):
+    def body(self, max_bytes=50_000):
         size = int(self.headers.get("Content-Length", "0"))
-        if not 0 < size <= 50_000:
-            raise ValueError("Request body must be between 1 and 50,000 bytes.")
+        if not 0 < size <= max_bytes:
+            raise ValueError(f"Request body must be between 1 and {max_bytes:,} bytes.")
         if self.headers.get("Content-Type", "").split(";")[0] != "application/json":
             raise ValueError("Send JSON data.")
         body = json.loads(self.rfile.read(size))
@@ -214,8 +214,14 @@ class Handler(BaseHTTPRequestHandler):
         model = os.environ.get('CARCARE_OLLAMA_MODEL', '').strip()
         drafter = None
         if model and body['kind'] == 'receipt':
-            body['receipt_text'] = text_field(body, 'receipt_text', limit=4000)
-            drafter = partial(draft_receipt, model=model)
+            if 'receipt_image' in body:
+                if 'receipt_text' in body:
+                    raise ValueError("Provide receipt text or an image, one at a time.")
+                image = validate_image(body['receipt_image'])
+                drafter = partial(draft_receipt, model=model, receipt_image=image)
+            else:
+                body['receipt_text'] = text_field(body, 'receipt_text', limit=4000)
+                drafter = partial(draft_receipt, model=model)
         started = perf_counter()
         try:
             reviewed = coordinate_ai_requests_and_responses(body,
@@ -245,7 +251,9 @@ class Handler(BaseHTTPRequestHandler):
             file_name = "index.html" if path == "/" else path[1:]
             media = {"index.html": "text/html", "app.js": "text/javascript", "styles.css": "text/css"}[file_name]
             return self.reply((ROOT / "frontend" / file_name).read_bytes(), content_type=media + "; charset=utf-8")
-        body = self.body() if self.command in ("POST", "PUT") else {}
+        receipt_route = path in ("/api/receipt-draft", "/internal/v1/coordinate-ai") and self.command == "POST"
+        max_bytes = MAX_IMAGE_BASE64 + 1024 if receipt_route else 50_000
+        body = self.body(max_bytes) if self.command in ("POST", "PUT") else {}
         with closing(connect()) as db, db:
             # Thin localhost-only contract adapters. They reuse the same model
             # functions as the product; none establish owner authentication.

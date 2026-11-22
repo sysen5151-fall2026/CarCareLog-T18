@@ -1,6 +1,6 @@
 """Lab 13 evaluation of the pinned local model on the labeled receipt samples.
 
-Run from the repository root after `ollama pull qwen2.5:3b-instruct-q4_K_M`:
+Run from the repository root after `ollama pull qwen3.5:4b`:
 
     python CarCareLog/tools/evaluate_receipts.py
 
@@ -34,7 +34,7 @@ from backend.function_f22 import _plain, review_receipt_draft  # noqa: E402
 FIELDS = ("service_date", "service_item", "category", "mileage", "cost", "provider")
 OUTCOMES = ("correct", "correct_flagged", "wrong_flagged", "wrong_unflagged")
 SAMPLES = ROOT / "CarCareLog" / "data" / "receipt-samples.jsonl"
-OUTPUT = ROOT / "docs" / "evidence" / "lab13-receipt-eval"
+OUTPUT = ROOT / "docs" / "evidence" / "qwen35-text-eval"
 
 
 def load_samples(path=SAMPLES):

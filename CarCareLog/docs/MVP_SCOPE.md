@@ -6,7 +6,7 @@ This prototype implements the core manual workflow in the team's stakeholder req
 | --- | --- | --- |
 | SR01 | Implemented | Add/edit/delete selected-vehicle records. API lifecycle test. |
 | SR02 | Implemented for core workflow | Current mileage and descending service timeline; client-side service/provider search and date-range filters. |
-| SR03–SR05 | Partial | Pasted receipt text is drafted by the pinned local model, checked field by field, and reviewed in the Add record dialog before Confirm & save. Receipt images and OCR, and a timed usability study against the 180-second criterion, remain open. |
+| SR03–SR05 | Partial | The local vision model drafts from text or one JPEG/PNG. The app checks text provenance and flags all image-derived values for human comparison before Confirm & save. A timed usability study against the 180-second criterion remains open. |
 | SR06 | Partial | User supplies the manual reference for each interval. The app does not verify or retrieve that reference. |
 | SR07–SR08 | Implemented | Recompute on mileage changes and record add/edit/delete. Mileage/time due and upcoming states tested. |
 | SR09 | Implemented | Exact-cent total and monthly costs split by Maintenance/Repair category. |
@@ -16,7 +16,7 @@ This prototype implements the core manual workflow in the team's stakeholder req
 | SR14 | Pending | No seven-day availability measurement has been performed. |
 | SR15 | Supported | Core record operations run independently of AI. A controlled timeout test verifies that the ledger remains unchanged and manual saving still works. |
 | SR16 | Implemented for the local build | Repeatable checks cover CRUD, reminders, expenses, exports, fixed grounded lookup, receipt drafts and checks, and an end-to-end smoke test in CI on three operating systems. `tools/evaluate_receipts.py` evaluates the real model on 20 labeled receipts. |
-| SR17 | Partial | The receipt adapter talks only to a loopback runtime and sends only the receipt text. Hosted AI and a production data-handling policy remain open. |
+| SR17 | Partial | The receipt adapter talks only to a loopback runtime and sends only the supplied text or image. Hosted AI and a production data-handling policy remain open. |
 | SR18 | Pending | Stop-and-copy backup instructions exist; automated 24-hour recovery guarantees are not implemented. |
 
 ## Demo flow
@@ -38,7 +38,7 @@ This prototype implements the core manual workflow in the team's stakeholder req
 | PUT | `/api/vehicles/{id}` | Update vehicle name and odometer |
 | GET | `/api/dashboard?vehicle_id={id}` | Records, reminders and cost summary |
 | POST | `/api/records` | Confirm and save a record |
-| POST | `/api/receipt-draft` | Draft a record from receipt text with the local model (nothing is saved) |
+| POST | `/api/receipt-draft` | Draft a record from receipt text or image with the local model (nothing is saved) |
 | GET | `/api/receipt-assist` | Whether AI drafting is on, plus the sample receipt |
 | PUT / DELETE | `/api/records/{id}` | Edit / delete a record |
 | POST | `/api/reminders` | Configure or replace a service interval |

@@ -64,7 +64,7 @@ def coordinate_ai_requests_and_responses(receipt_or_question_request, *,
                                         authorized_records_and_source_references):
     """F.2.2.2 / C.2.2: request a receipt draft and check it before owner review.
 
-    Input: the receipt text only. Control: the configured drafter and service list.
+    Input: receipt text or one image bound to the local drafter. Control: configured service limits.
     Output: form values plus per-field evidence, or an exception the caller turns
     into an explicit unavailable response. Question answering remains unavailable.
     """
@@ -72,8 +72,8 @@ def coordinate_ai_requests_and_responses(receipt_or_question_request, *,
     drafter = limits.get("receipt_drafter")
     if drafter is None or receipt_or_question_request.get("kind") != "receipt":
         raise NotImplementedError("This AI operation is unavailable.")
-    text = receipt_or_question_request["receipt_text"]
-    return review_receipt_draft(drafter(text), text,
+    text = receipt_or_question_request.get("receipt_text")
+    return review_receipt_draft(drafter(text or ""), text,
                                 services=limits.get("services", SERVICE_ITEMS),
                                 today=limits.get("today") or date.today())
 
@@ -132,6 +132,10 @@ def review_receipt_draft(draft, receipt_text, *, services=SERVICE_ITEMS, today=N
     proposal, evidence = {}, {}
 
     def keep(field, value, status, note):
+        if receipt_text is None and value is not None:
+            status, note = "check", "Compare this value with the original receipt image."
+            if field == "mileage" and draft.get("odometer_unit") == "mi":
+                note = f"Model read {draft['odometer_value']:,} mi, converted to {value:,} km. Check the image."
         proposal[field] = value
         evidence[field] = {"status": status, "note": note}
 

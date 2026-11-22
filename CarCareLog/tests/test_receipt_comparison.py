@@ -118,7 +118,7 @@ class ReceiptComparisonTests(unittest.TestCase):
 
     def test_report_puts_both_runs_side_by_side(self):
         local = cmp.measure(self.samples, lambda text: dict(self.ideal[text]))
-        local.update(ollama_version="0.40.16", started_utc="2026-11-22T00:00:00+00:00", samples_sha256="a" * 64)
+        local.update(model=cmp.runtime.LAB13_MODEL, ollama_version="0.40.16", started_utc="2026-11-22T00:00:00+00:00", samples_sha256="a" * 64)
         opener, _ = self.opener_for(lambda body: responses_reply(
             self.ideal[json.loads(body["input"].rsplit("Receipt text (JSON string): ", 1)[1])]))
         drafter = cmp.hosted_drafter("k", opener)
