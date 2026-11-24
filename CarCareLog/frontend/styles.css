@@ -9,3 +9,14 @@
 #source-review, #duplicate-warning { padding: .75rem; margin: .75rem 0; background: #fff5df; border-radius: .5rem; color: #342918; }
 .record:focus { outline: 3px solid #286653; outline-offset: 2px; }
 #duplicate-matches details { margin: .45rem 0; }
+.account-entry { max-width: 510px; margin: 8vh auto; padding: 0 20px; }
+.account-panel { padding: clamp(24px, 5vw, 46px); }
+.account-panel h1 { margin-top: 0; }
+.account-panel .muted { line-height: 1.6; }
+.account-panel form { display: grid; }
+.account-panel label { margin: 1rem 0 .35rem; font-weight: 600; }
+.account-panel small { margin-top: .3rem; }
+.account-panel .form-error:empty { display: none; }
+.account-panel #auth-submit { margin: 1.4rem 0 .8rem; }
+.header .actions { margin-left: auto; }
+@media (max-width: 520px) { .header .actions > .muted { display: none; } }

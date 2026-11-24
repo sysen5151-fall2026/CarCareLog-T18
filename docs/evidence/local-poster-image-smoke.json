@@ -1,0 +1,92 @@
+{
+  "started_utc": "2026-11-24T00:21:44.473839+00:00",
+  "model": "qwen3.5:4b",
+  "fixture": "R06.png",
+  "scope": "loopback HTTP product workflow, isolated temporary SQLite database",
+  "checks": [
+    {
+      "check": "Demo vehicle seeded",
+      "pass": true,
+      "observed": {
+        "http": 201
+      }
+    },
+    {
+      "check": "PNG returns an unconfirmed draft from the real local model",
+      "pass": true,
+      "observed": {
+        "http": 200,
+        "status": "needs_review",
+        "owner_confirmed": false,
+        "seconds": 32.079
+      }
+    },
+    {
+      "check": "Each image-derived field requires review",
+      "pass": true,
+      "observed": {
+        "service_date": "check",
+        "service_item": "check",
+        "category": "check",
+        "mileage": "check",
+        "cost": "check",
+        "provider": "check"
+      }
+    },
+    {
+      "check": "Producing the draft leaves persistence unchanged",
+      "pass": true,
+      "observed": {
+        "rows": 3
+      }
+    },
+    {
+      "check": "Unconfirmed write is rejected",
+      "pass": true,
+      "observed": {
+        "http": 400,
+        "rows": 3
+      }
+    },
+    {
+      "check": "Simulated owner confirmation saves one record",
+      "pass": true,
+      "observed": {
+        "http": 201,
+        "fields": {
+          "service_date": "2026-07-14",
+          "service_item": "Oil change",
+          "category": "Maintenance",
+          "mileage": 48361,
+          "cost": "43.19",
+          "provider": "Finger Lakes Lube"
+        }
+      }
+    },
+    {
+      "check": "Retry of the same confirmation does not duplicate the record",
+      "pass": true,
+      "observed": {
+        "http": 201,
+        "same_record_id": true
+      }
+    },
+    {
+      "check": "Saved record survives app restart",
+      "pass": true,
+      "observed": {
+        "rows": 4,
+        "total_cents": 40318
+      }
+    },
+    {
+      "check": "Fixture raw bytes and base64 absent from the resulting SQLite file",
+      "pass": true,
+      "observed": {
+        "png_bytes_present": false,
+        "base64_present": false
+      }
+    }
+  ],
+  "finished_utc": "2026-11-24T00:22:19.502609+00:00"
+}

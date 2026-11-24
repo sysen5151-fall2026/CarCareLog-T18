@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CarCareLog · Local sign-in</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/signin.js" defer></script>
+</head>
+<body>
+<header><div class="wrap header"><a class="brand" href="/">C<span>CarCareLog</span></a><span class="muted">SYSEN 5151 · Team 18</span></div></header>
+<main class="account-entry">
+  <section class="panel account-panel">
+    <p class="eyebrow">LOCAL DEMO</p>
+    <h1 id="form-title">Sign in</h1>
+    <p class="muted">Your vehicles and receipts stay in your account on this computer. For this classroom demo, use sample records and a separate demo password.</p>
+    <form id="auth-form">
+      <label for="username">Demo username</label>
+      <input id="username" name="username" required minlength="3" maxlength="32" autocapitalize="none" spellcheck="false" autocomplete="username" aria-describedby="username-hint">
+      <small id="username-hint" class="muted">3–32 characters. Use letters, numbers, periods, dashes or underscores.</small>
+      <label for="password">Password</label>
+      <input id="password" name="password" required type="password" maxlength="128" autocomplete="current-password" aria-describedby="password-hint">
+      <small id="password-hint" class="muted" hidden>Use at least 12 characters.</small>
+      <p id="auth-error" class="form-error" role="alert"></p>
+      <button id="auth-submit" type="submit">Sign in</button>
+    </form>
+    <button type="button" id="auth-switch" class="link-button">Create a local account</button>
+  </section>
+</main>
+</body>
+</html>

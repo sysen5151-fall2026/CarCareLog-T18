@@ -25,4 +25,17 @@ Revision: local vision build, November 22, 2026. Covers registered HTTP operatio
 | Internal AI boundary | POST /internal/v1/coordinate-ai | UC.1 text or photo receipt; UC.4 general questions remain open | F.2.2.2 | Same handler as POST /api/receipt-draft | Implemented localhost adapter for `kind: receipt`; HTTP 503 without the runtime, no automatic write |
 | Static application files | GET /; GET /app.js; GET /styles.css | All UI entry points above | F.2.1 | frontend/index.html, app.js, styles.css | Presentation assets, not separate use cases |
 
-The application has no vehicle-delete or health endpoint. Unknown paths return 404. Local owner-confirmation flags are workflow controls, not authentication. All internal endpoints use the same localhost Host/Origin guard as product endpoints.
+The default single-owner entry point exposes the internal adapters on loopback. The optional account entry point returns 404 for the internal adapters and authenticates the listed product routes, including history, export, receipt drafting and demo seeding. Owner confirmation is still required to save a record. Neither mode offers a vehicle-deletion operation.
+
+### Additional routes in local account mode
+
+| Method and route | Result |
+| --- | --- |
+| GET / or /signin | Sign-in or registration form when signed out. Dashboard when signed in. |
+| POST /api/auth/register | Takes a demo username and password, creates an empty ledger and signs the owner in. |
+| POST /api/auth/login | Validates credentials and issues a new session. |
+| GET /api/auth/session | Returns the current username for a valid session. |
+| POST /api/auth/logout | Revokes the current session. |
+| GET /health | Returns a program status without account or ledger data. |
+
+This entry point binds to 127.0.0.1. All mutations require the configured local origin. The browser identifies its current workspace so that a form opened before an account switch cannot save into the newly signed-in owner's ledger. See [ADR 013](adr-013-local-owner-accounts.md).

@@ -4,6 +4,8 @@ Revision: Lab 13 update, December 2026 (TA4 baseline 3 November 2026). Code root
 
 All 22 populated ASR leaves are listed. A test name records selected evidence, not full requirement closure. The native requirements remain Draft. Exact statements are retained in `docs/requirements-baseline.json`.
 
+The table below records the original single-owner measurements. The subsequent classroom release adds [optional local account isolation for SR13](adr-013-local-owner-accounts.md). Six HTTP regressions cover signed-out access, separate ledgers, session rotation and expiration, stale tabs, new-ledger creation and account request limits. The prior V08 outage fixture and the new local account tests measure different conditions. [V03 owner timing](verification/receipt-owner-study.md) still needs observations from first-time vehicle owners.
+
 | Requirement and native ID | Function / mechanism | Module | Named tests in CarCareLog/tests/test_functional_requirements.py | Evidence and outstanding scope |
 |---|---|---|---|---|
 | SRD 1.4.1.2 / 263241 | F.2.2 / C.2 | CarCareLog/backend/function_f22.py and backend/app.py | test_SRD_1_4_1_2_manual_requested_operation | Manual end-to-end subset. AI and authenticated owners remain open. |

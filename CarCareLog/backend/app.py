@@ -37,16 +37,17 @@ DEMO_RECEIPT = ROOT / "data" / "demo-receipt.txt"
 SERVICES = ["Oil change", "Tire rotation", "Brake service", "Inspection", "Battery", "Other"]
 
 
-def connect():
-    db = sqlite3.connect(DB_PATH, timeout=10)
+def connect(path=None):
+    db = sqlite3.connect(path or DB_PATH, timeout=10)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys = ON")
     return db
 
 
-def init_db():
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with closing(connect()) as db, db:
+def init_db(path=None):
+    path = path or DB_PATH
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with closing(connect(path)) as db, db:
         db.executescript("""
         CREATE TABLE IF NOT EXISTS vehicles (
             id INTEGER PRIMARY KEY, name TEXT NOT NULL, mileage INTEGER NOT NULL
@@ -186,6 +187,14 @@ def seed_demo(db):
 
 
 class Handler(BaseHTTPRequestHandler):
+    def open_ledger(self):
+        return connect()
+
+    def allowed_origin(self):
+        host = self.headers.get("Host", "")
+        expected = {f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"}
+        return host in expected and self.headers.get("Origin", "http://" + host) == "http://" + host
+
     @contextmanager
     def measure(self, stage):
         start = perf_counter()
@@ -261,10 +270,7 @@ class Handler(BaseHTTPRequestHandler):
             'elapsed_ms': round((perf_counter() - started) * 1000)})
 
     def dispatch(self):
-        # The demo is local-only. Reject remote Host/Origin values and avoid exposing the DB.
-        host = self.headers.get("Host", "")
-        expected = {f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"}
-        if host not in expected or self.headers.get("Origin", "http://" + host) != "http://" + host:
+        if not self.allowed_origin():
             return self.reply({"error": "Use the local app address."}, 403)
         parts = urlsplit(self.path)
         path = parts.path
@@ -276,7 +282,7 @@ class Handler(BaseHTTPRequestHandler):
         receipt_route = path in ("/api/receipt-draft", "/internal/v1/coordinate-ai") and self.command == "POST"
         max_bytes = MAX_IMAGE_BASE64 + 1024 if receipt_route else 50_000
         body = self.body(max_bytes) if self.command in ("POST", "PUT") else {}
-        with closing(connect()) as db, db:
+        with closing(self.open_ledger()) as db, db:
             # Thin localhost-only contract adapters. They reuse the same model
             # functions as the product; none establish owner authentication.
             if path.startswith('/internal/v1/') and self.command == 'POST':

@@ -12,7 +12,7 @@ This prototype implements the core manual workflow in the team's stakeholder req
 | SR09 | Implemented | Exact-cent total and monthly spending use the receipt-level Maintenance/Repair category. A multi-service invoice contributes its total once. |
 | SR10–SR11 | Partial | Four fixed lookups cite source records for total spending, last oil change, tire-rotation mileage and annual brake spending. A mixed invoice with no separate brake price leaves the exact brake total unknown. Free-form and manual-grounded answers are pending. |
 | SR12 | Implemented | CSV exports all confirmed records for the selected vehicle; Unicode and spreadsheet formula escaping tested. |
-| SR13 | Pending | Local loopback server only. No accounts, owner authorization or multi-user access control. |
+| SR13 | Partial, optional local account mode | With `--accounts`, each signed-in owner uses a separate SQLite ledger. [HTTP regression checks](../tests/test_owner_site.py) exercise blocked signed-out access, account switching and cross-account reads and writes. Default single-owner mode assumes a private computer. Independently administered or network-hosted service is outside this test scope. |
 | SR14 | Pending | No seven-day availability measurement has been performed. |
 | SR15 | Supported | Core record operations run independently of AI. A controlled timeout test verifies that the ledger remains unchanged and manual saving still works. |
 | SR16 | Implemented for the local build | Repeatable checks cover CRUD, reminders, expenses, exports, fixed grounded lookup, receipt drafts and checks, and an end-to-end smoke test in CI on three operating systems. `tools/evaluate_receipts.py` evaluates the real model on 20 labeled receipts. |

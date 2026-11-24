@@ -4,6 +4,25 @@ Cornell SYSEN 5151 · Team 18 · Implementation and integration
 
 CarCareLog keeps a vehicle's confirmed service history, costs, and maintenance reminders together. The primary use case is **UC.1 Manage Maintenance Records**. The owner can paste receipt text or select a JPEG/PNG photo. The local model drafts a record. The application compares text-derived values with the source text and flags image-derived values for visual review. Nothing is saved until the owner selects **Confirm & save**.
 
+## Quick start for poster visitors
+
+1. [Download the classroom build as a ZIP](https://github.com/sysen5151-fall2026/CarCareLog-T18/archive/refs/heads/final-poster-demo.zip) and extract it. Open a terminal in the extracted folder containing `run_demo.py`. You need [Python 3.10 or later](https://www.python.org/downloads/). All app dependencies come with Python.
+2. Start the app with the command for your computer.
+
+   | Windows PowerShell | macOS or Linux terminal |
+   | --- | --- |
+   | `python run_demo.py` | `python3 run_demo.py` |
+
+   On Windows installations that expose the Python launcher instead of `python`, use `py -3 run_demo.py`.
+
+3. Open [http://127.0.0.1:8000](http://127.0.0.1:8000) on the same computer. Select **Load demo data** to see a vehicle with three service records totaling **$359.99**. Try **Add record**, enter a service manually, select **Confirm & save**, then refresh the page to see the saved record. Stop the app with **Ctrl+C** in the terminal.
+
+To try **separate local accounts**, add `--accounts` to your start command. Register a demo username and password in the browser. Each account has its own vehicle history on this computer. The single-owner and account modes store their records separately under `.carcarelog-classroom` in your home folder. A new run reopens the same records. To use an empty classroom workspace, add `--data-dir` followed by the path to a new folder.
+
+To try **AI drafting from a receipt photo or text**, install and start [Ollama](https://ollama.com/download), then run `ollama pull qwen3.5:4b` once. Restart the app with `--ai` added to the same command (the flags `--ai --accounts` also work together). In **Add record**, open **Draft from a receipt**, select **Use sample receipt** or choose a JPEG/PNG, then select **Draft with local AI**. Review the fields before saving. If port 8000 is busy, add `--port 8001` and use the address printed in the terminal.
+
+The ZIP includes a [synthetic oil-change receipt](CarCareLog/data/demo-receipt.png) for the image workflow. Choose that file from the extracted `CarCareLog/data` folder. The printed total is $43.19 after a $10 coupon. The [product replay](docs/evidence/local-poster-image-smoke.json) records the draft, owner confirmation and saved record after restart. The [local account check](docs/evidence/local-owner-demo-2026-11-23.md) documents signup, sign-in and separate histories.
+
 ## Pinned versions
 
 | Component | Pinned version | Notes |
@@ -72,7 +91,7 @@ Use a fresh temporary database for each rehearsal. Keep real vehicle records off
 You need Git and Python 3.10 or later. Ollama is needed only for the real-model steps.
 
 ```bash
-git clone --branch receipt-review-and-history https://github.com/sysen5151-fall2026/CarCareLog-T18.git
+git clone --branch final-poster-demo https://github.com/sysen5151-fall2026/CarCareLog-T18.git
 cd CarCareLog-T18/CarCareLog
 python3 -m unittest discover -s tests -v                # all tests, no model needed
 cd ..
@@ -113,7 +132,7 @@ Open [T18 Universe Context](https://cloud.innoslate.com/cornell/p/746/diagrams/a
 | OpsCon asset | Status | Location in this build |
 | --- | --- | --- |
 | Ext.1 Vehicle Owner | Working | The [web interface](CarCareLog/frontend/index.html) and [browser interactions](CarCareLog/frontend/app.js) support manual entry and receipt text or image drafting with review. |
-| C.0 CarCareLog System | Partial | C.1 is the browser UI. C.2 is the [HTTP service](CarCareLog/backend/app.py) with [F.2.2 coordination](CarCareLog/backend/function_f22.py), including the F.2.2.2 draft checks. C.3 is the SQLite store. Owner authentication and data isolation remain open. |
+| C.0 CarCareLog System | Partial | C.1 is the browser UI. C.2 is the [HTTP service](CarCareLog/backend/app.py) with [F.2.2 coordination](CarCareLog/backend/function_f22.py). C.3 stores confirmed records in SQLite. The [optional local account service](CarCareLog/backend/owner_site.py) signs owners in and gives each account a separate ledger on the same device. |
 | Ext.2 AI Model Runtime | Working locally | The [runtime adapter](CarCareLog/backend/receipt_runtime.py) calls the pinned model in a local Ollama service. The local adapter supports JPEG/PNG and pasted text. General questions and hosted product operation remain open. |
 | Ext.3 Application Operator | Partial | The operator sets the model, runtime port, and timeout with environment variables and starts and stops the app from a terminal. A dedicated operator interface and automated recovery are pending. |
 
@@ -130,7 +149,7 @@ The service provider gives receipts to the owner outside the application. There 
 
 ## Design decisions and risks
 
-[ADR 011](docs/adr-011-receipt-runtime.md) records the original choice of SA.A and Qwen2.5. [ADR 012](docs/adr-012-local-receipt-vision.md) records the Qwen3.5 image-input increment. The [risk register](docs/risks.md) links to the native Innoslate matrix. Open items are tracked in [GitHub Issues](https://github.com/sysen5151-fall2026/CarCareLog-T18/issues).
+[ADR 011](docs/adr-011-receipt-runtime.md) records the original choice of SA.A and Qwen2.5. [ADR 012](docs/adr-012-local-receipt-vision.md) records the Qwen3.5 image-input increment. [ADR 013](docs/adr-013-local-owner-accounts.md) documents account sign-in and separate ledgers for a classroom computer. The [risk register](docs/risks.md) links to the native Innoslate matrix. Open items are tracked in [GitHub Issues](https://github.com/sysen5151-fall2026/CarCareLog-T18/issues).
 
 ## Tests and related files
 

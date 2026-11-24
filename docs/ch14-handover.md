@@ -2,6 +2,8 @@
 
 This guide is for a maintainer receiving the T18 build. The local browser application supports vehicle histories, confirmed service records and maintenance reminders. The optional Ollama adapter can draft receipt fields from text or a JPEG/PNG. One person operates the classroom instance on one computer.
 
+The poster release adds [a classroom quick start](../README.md#quick-start-for-poster-visitors). A visitor can download or clone the branch and start it on their own device. Adding `--accounts` turns on local registration, sign-in and account-specific storage. Adding `--ai` turns on the loopback model. Scope and controls for account mode are recorded in [ADR 013](adr-013-local-owner-accounts.md).
+
 ## Installation and first run
 
 1. Check out the release revision recorded in the report. Install a Python version exercised by the repository CI (Python 3.12 is a suitable choice) and check `python --version`. The application uses SQLite and the Python standard library. No Python dependencies need downloading.
