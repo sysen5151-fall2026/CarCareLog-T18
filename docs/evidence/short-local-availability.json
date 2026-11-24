@@ -1,0 +1,56 @@
+{
+  "protocol": "Three real reads on a disposable synthetic dashboard, one minute apart; separate planned restart",
+  "platform": "Windows",
+  "python": "3.14.8",
+  "build_sha256_at_start": "4f6cfd3969cb5f5984eaae5c2a5569c2c85f6688b424eb78892c22b5bc7c8ebf",
+  "build_sha256_at_end": "4f6cfd3969cb5f5984eaae5c2a5569c2c85f6688b424eb78892c22b5bc7c8ebf",
+  "successful_fixture_reads": 3,
+  "elapsed_first_to_last_seconds": 120.001,
+  "scheduled_reads": [
+    {
+      "observed_utc": "2026-11-24T01:37:24.928+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 18.66,
+      "seconds_from_first_scheduled_read": 0.0
+    },
+    {
+      "observed_utc": "2026-11-24T01:38:24.929+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 5.13,
+      "seconds_from_first_scheduled_read": 60.001
+    },
+    {
+      "observed_utc": "2026-11-24T01:39:24.928+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 7.03,
+      "seconds_from_first_scheduled_read": 120.001
+    }
+  ],
+  "planned_restart": {
+    "service_stopped_utc": "2026-11-24T01:39:24.942+00:00",
+    "offline_probe_result": "unreachable",
+    "restart_to_validated_dashboard_seconds": 1.158,
+    "restored_dashboard": {
+      "observed_utc": "2026-11-24T01:39:28.110+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 4.05
+    }
+  },
+  "official_seven_day_window_started": false
+}
