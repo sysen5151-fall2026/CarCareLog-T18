@@ -1,0 +1,1126 @@
+{
+  "protocol": "Local dashboard HTTP/SQLite fixture check, one scheduled read per minute including both endpoints",
+  "interval_seconds": 60,
+  "planned_minutes": 120,
+  "planned_reads": 121,
+  "platform": "Windows",
+  "python": "3.14.8",
+  "expected_vehicle_id": 1,
+  "expected_receipts": 3,
+  "expected_total_cents": 35999,
+  "build_sha256_at_start": "4f6cfd3969cb5f5984eaae5c2a5569c2c85f6688b424eb78892c22b5bc7c8ebf",
+  "official_seven_day_window_started": false,
+  "build_sha256_at_end": "4f6cfd3969cb5f5984eaae5c2a5569c2c85f6688b424eb78892c22b5bc7c8ebf",
+  "start_utc": "2026-11-24T02:00:03.732+00:00",
+  "finished_utc": "2026-11-24T04:00:03.763+00:00",
+  "resume_events_utc": [
+    "2026-11-24T03:36:01.698+00:00"
+  ],
+  "service_restarted_on_resume": true,
+  "first_to_last_attempt_seconds": 7200.001,
+  "successful_fixture_reads": 55,
+  "failed_reads": 0,
+  "missing_reads": 66,
+  "scheduled_reads": [
+    {
+      "minute": 0,
+      "scheduled_utc": "2026-11-24T02:00:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:00:03.732+00:00",
+      "elapsed_seconds_at_attempt": 0.0,
+      "observed_utc": "2026-11-24T02:00:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 9.29,
+      "result": "ok"
+    },
+    {
+      "minute": 1,
+      "scheduled_utc": "2026-11-24T02:01:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:01:03.733+00:00",
+      "elapsed_seconds_at_attempt": 60.001,
+      "observed_utc": "2026-11-24T02:01:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 10.8,
+      "result": "ok"
+    },
+    {
+      "minute": 2,
+      "scheduled_utc": "2026-11-24T02:02:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:02:03.733+00:00",
+      "elapsed_seconds_at_attempt": 120.0,
+      "observed_utc": "2026-11-24T02:02:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 12.35,
+      "result": "ok"
+    },
+    {
+      "minute": 3,
+      "scheduled_utc": "2026-11-24T02:03:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:03:03.733+00:00",
+      "elapsed_seconds_at_attempt": 180.0,
+      "observed_utc": "2026-11-24T02:03:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 6.03,
+      "result": "ok"
+    },
+    {
+      "minute": 4,
+      "scheduled_utc": "2026-11-24T02:04:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:04:03.733+00:00",
+      "elapsed_seconds_at_attempt": 240.0,
+      "observed_utc": "2026-11-24T02:04:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 4.95,
+      "result": "ok"
+    },
+    {
+      "minute": 5,
+      "scheduled_utc": "2026-11-24T02:05:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:05:03.733+00:00",
+      "elapsed_seconds_at_attempt": 300.0,
+      "observed_utc": "2026-11-24T02:05:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 11.65,
+      "result": "ok"
+    },
+    {
+      "minute": 6,
+      "scheduled_utc": "2026-11-24T02:06:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:06:03.833+00:00",
+      "elapsed_seconds_at_attempt": 360.1,
+      "observed_utc": "2026-11-24T02:06:03.833+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 1002.3,
+      "result": "ok"
+    },
+    {
+      "minute": 7,
+      "scheduled_utc": "2026-11-24T02:07:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:07:03.733+00:00",
+      "elapsed_seconds_at_attempt": 420.0,
+      "observed_utc": "2026-11-24T02:07:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 29.91,
+      "result": "ok"
+    },
+    {
+      "minute": 8,
+      "scheduled_utc": "2026-11-24T02:08:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:08:03.733+00:00",
+      "elapsed_seconds_at_attempt": 480.0,
+      "observed_utc": "2026-11-24T02:08:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 5.99,
+      "result": "ok"
+    },
+    {
+      "minute": 9,
+      "scheduled_utc": "2026-11-24T02:09:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:09:03.733+00:00",
+      "elapsed_seconds_at_attempt": 540.001,
+      "observed_utc": "2026-11-24T02:09:03.734+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 10.45,
+      "result": "ok"
+    },
+    {
+      "minute": 10,
+      "scheduled_utc": "2026-11-24T02:10:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:10:03.733+00:00",
+      "elapsed_seconds_at_attempt": 600.001,
+      "observed_utc": "2026-11-24T02:10:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 13.73,
+      "result": "ok"
+    },
+    {
+      "minute": 11,
+      "scheduled_utc": "2026-11-24T02:11:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:11:03.733+00:00",
+      "elapsed_seconds_at_attempt": 660.0,
+      "observed_utc": "2026-11-24T02:11:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 10.35,
+      "result": "ok"
+    },
+    {
+      "minute": 12,
+      "scheduled_utc": "2026-11-24T02:12:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:12:03.733+00:00",
+      "elapsed_seconds_at_attempt": 720.0,
+      "observed_utc": "2026-11-24T02:12:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 6.69,
+      "result": "ok"
+    },
+    {
+      "minute": 13,
+      "scheduled_utc": "2026-11-24T02:13:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:13:04.181+00:00",
+      "elapsed_seconds_at_attempt": 780.448,
+      "observed_utc": "2026-11-24T02:13:04.181+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 4314.41,
+      "result": "ok"
+    },
+    {
+      "minute": 14,
+      "scheduled_utc": "2026-11-24T02:14:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:14:06.271+00:00",
+      "elapsed_seconds_at_attempt": 842.538,
+      "observed_utc": "2026-11-24T02:14:06.271+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 241.23,
+      "result": "ok"
+    },
+    {
+      "minute": 15,
+      "scheduled_utc": "2026-11-24T02:15:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:15:03.941+00:00",
+      "elapsed_seconds_at_attempt": 900.208,
+      "observed_utc": "2026-11-24T02:15:03.941+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 1496.26,
+      "result": "ok"
+    },
+    {
+      "minute": 16,
+      "scheduled_utc": "2026-11-24T02:16:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:16:06.023+00:00",
+      "elapsed_seconds_at_attempt": 962.29,
+      "observed_utc": "2026-11-24T02:16:06.023+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 78.36,
+      "result": "ok"
+    },
+    {
+      "minute": 17,
+      "scheduled_utc": "2026-11-24T02:17:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:17:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1020.0,
+      "observed_utc": "2026-11-24T02:17:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 11.76,
+      "result": "ok"
+    },
+    {
+      "minute": 18,
+      "scheduled_utc": "2026-11-24T02:18:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:18:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1080.0,
+      "observed_utc": "2026-11-24T02:18:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 8.01,
+      "result": "ok"
+    },
+    {
+      "minute": 19,
+      "scheduled_utc": "2026-11-24T02:19:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:19:03.734+00:00",
+      "elapsed_seconds_at_attempt": 1140.001,
+      "observed_utc": "2026-11-24T02:19:03.734+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 11.03,
+      "result": "ok"
+    },
+    {
+      "minute": 20,
+      "scheduled_utc": "2026-11-24T02:20:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:20:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1200.0,
+      "observed_utc": "2026-11-24T02:20:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 11.14,
+      "result": "ok"
+    },
+    {
+      "minute": 21,
+      "scheduled_utc": "2026-11-24T02:21:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:21:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1260.0,
+      "observed_utc": "2026-11-24T02:21:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 11.93,
+      "result": "ok"
+    },
+    {
+      "minute": 22,
+      "scheduled_utc": "2026-11-24T02:22:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:22:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1320.0,
+      "observed_utc": "2026-11-24T02:22:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 15.54,
+      "result": "ok"
+    },
+    {
+      "minute": 23,
+      "scheduled_utc": "2026-11-24T02:23:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:23:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1380.0,
+      "observed_utc": "2026-11-24T02:23:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 10.36,
+      "result": "ok"
+    },
+    {
+      "minute": 24,
+      "scheduled_utc": "2026-11-24T02:24:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:24:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1440.001,
+      "observed_utc": "2026-11-24T02:24:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 15.77,
+      "result": "ok"
+    },
+    {
+      "minute": 25,
+      "scheduled_utc": "2026-11-24T02:25:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:25:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1500.0,
+      "observed_utc": "2026-11-24T02:25:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 21.35,
+      "result": "ok"
+    },
+    {
+      "minute": 26,
+      "scheduled_utc": "2026-11-24T02:26:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:26:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1560.0,
+      "observed_utc": "2026-11-24T02:26:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 20.29,
+      "result": "ok"
+    },
+    {
+      "minute": 27,
+      "scheduled_utc": "2026-11-24T02:27:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:27:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1620.0,
+      "observed_utc": "2026-11-24T02:27:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 9.02,
+      "result": "ok"
+    },
+    {
+      "minute": 28,
+      "scheduled_utc": "2026-11-24T02:28:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:28:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1680.0,
+      "observed_utc": "2026-11-24T02:28:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 8.01,
+      "result": "ok"
+    },
+    {
+      "minute": 29,
+      "scheduled_utc": "2026-11-24T02:29:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:29:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1740.0,
+      "observed_utc": "2026-11-24T02:29:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 14.94,
+      "result": "ok"
+    },
+    {
+      "minute": 30,
+      "scheduled_utc": "2026-11-24T02:30:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:30:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1800.0,
+      "observed_utc": "2026-11-24T02:30:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 8.83,
+      "result": "ok"
+    },
+    {
+      "minute": 31,
+      "scheduled_utc": "2026-11-24T02:31:03.732+00:00",
+      "attempted_utc": "2026-11-24T02:31:03.733+00:00",
+      "elapsed_seconds_at_attempt": 1860.0,
+      "observed_utc": "2026-11-24T02:31:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 9.37,
+      "result": "ok"
+    },
+    {
+      "minute": 32,
+      "scheduled_utc": "2026-11-24T02:32:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 33,
+      "scheduled_utc": "2026-11-24T02:33:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 34,
+      "scheduled_utc": "2026-11-24T02:34:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 35,
+      "scheduled_utc": "2026-11-24T02:35:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 36,
+      "scheduled_utc": "2026-11-24T02:36:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 37,
+      "scheduled_utc": "2026-11-24T02:37:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 38,
+      "scheduled_utc": "2026-11-24T02:38:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 39,
+      "scheduled_utc": "2026-11-24T02:39:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 40,
+      "scheduled_utc": "2026-11-24T02:40:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 41,
+      "scheduled_utc": "2026-11-24T02:41:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 42,
+      "scheduled_utc": "2026-11-24T02:42:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 43,
+      "scheduled_utc": "2026-11-24T02:43:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 44,
+      "scheduled_utc": "2026-11-24T02:44:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 45,
+      "scheduled_utc": "2026-11-24T02:45:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 46,
+      "scheduled_utc": "2026-11-24T02:46:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 47,
+      "scheduled_utc": "2026-11-24T02:47:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 48,
+      "scheduled_utc": "2026-11-24T02:48:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 49,
+      "scheduled_utc": "2026-11-24T02:49:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 50,
+      "scheduled_utc": "2026-11-24T02:50:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 51,
+      "scheduled_utc": "2026-11-24T02:51:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 52,
+      "scheduled_utc": "2026-11-24T02:52:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 53,
+      "scheduled_utc": "2026-11-24T02:53:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 54,
+      "scheduled_utc": "2026-11-24T02:54:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 55,
+      "scheduled_utc": "2026-11-24T02:55:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 56,
+      "scheduled_utc": "2026-11-24T02:56:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 57,
+      "scheduled_utc": "2026-11-24T02:57:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 58,
+      "scheduled_utc": "2026-11-24T02:58:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 59,
+      "scheduled_utc": "2026-11-24T02:59:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 60,
+      "scheduled_utc": "2026-11-24T03:00:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 61,
+      "scheduled_utc": "2026-11-24T03:01:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 62,
+      "scheduled_utc": "2026-11-24T03:02:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 63,
+      "scheduled_utc": "2026-11-24T03:03:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 64,
+      "scheduled_utc": "2026-11-24T03:04:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 65,
+      "scheduled_utc": "2026-11-24T03:05:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 66,
+      "scheduled_utc": "2026-11-24T03:06:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 67,
+      "scheduled_utc": "2026-11-24T03:07:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 68,
+      "scheduled_utc": "2026-11-24T03:08:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 69,
+      "scheduled_utc": "2026-11-24T03:09:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 70,
+      "scheduled_utc": "2026-11-24T03:10:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 71,
+      "scheduled_utc": "2026-11-24T03:11:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 72,
+      "scheduled_utc": "2026-11-24T03:12:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 73,
+      "scheduled_utc": "2026-11-24T03:13:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 74,
+      "scheduled_utc": "2026-11-24T03:14:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 75,
+      "scheduled_utc": "2026-11-24T03:15:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 76,
+      "scheduled_utc": "2026-11-24T03:16:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 77,
+      "scheduled_utc": "2026-11-24T03:17:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 78,
+      "scheduled_utc": "2026-11-24T03:18:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 79,
+      "scheduled_utc": "2026-11-24T03:19:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 80,
+      "scheduled_utc": "2026-11-24T03:20:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 81,
+      "scheduled_utc": "2026-11-24T03:21:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 82,
+      "scheduled_utc": "2026-11-24T03:22:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 83,
+      "scheduled_utc": "2026-11-24T03:23:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:23:57.192+00:00",
+      "elapsed_seconds_at_attempt": 5033.46,
+      "observed_utc": "2026-11-24T03:23:57.192+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 233.33,
+      "result": "ok"
+    },
+    {
+      "minute": 84,
+      "scheduled_utc": "2026-11-24T03:24:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:24:03.733+00:00",
+      "elapsed_seconds_at_attempt": 5040.0,
+      "observed_utc": "2026-11-24T03:24:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 28.21,
+      "result": "ok"
+    },
+    {
+      "minute": 85,
+      "scheduled_utc": "2026-11-24T03:25:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 86,
+      "scheduled_utc": "2026-11-24T03:26:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 87,
+      "scheduled_utc": "2026-11-24T03:27:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 88,
+      "scheduled_utc": "2026-11-24T03:28:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 89,
+      "scheduled_utc": "2026-11-24T03:29:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 90,
+      "scheduled_utc": "2026-11-24T03:30:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 91,
+      "scheduled_utc": "2026-11-24T03:31:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 92,
+      "scheduled_utc": "2026-11-24T03:32:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 93,
+      "scheduled_utc": "2026-11-24T03:33:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 94,
+      "scheduled_utc": "2026-11-24T03:34:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 95,
+      "scheduled_utc": "2026-11-24T03:35:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:36:01.714+00:00",
+      "elapsed_seconds_at_attempt": 5757.982,
+      "observed_utc": "2026-11-24T03:36:01.714+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 15.0,
+      "result": "ok"
+    },
+    {
+      "minute": 96,
+      "scheduled_utc": "2026-11-24T03:36:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:36:03.732+00:00",
+      "elapsed_seconds_at_attempt": 5760.0,
+      "observed_utc": "2026-11-24T03:36:03.732+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 16.0,
+      "result": "ok"
+    },
+    {
+      "minute": 97,
+      "scheduled_utc": "2026-11-24T03:37:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:37:03.732+00:00",
+      "elapsed_seconds_at_attempt": 5820.001,
+      "observed_utc": "2026-11-24T03:37:03.732+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 32.0,
+      "result": "ok"
+    },
+    {
+      "minute": 98,
+      "scheduled_utc": "2026-11-24T03:38:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:38:03.733+00:00",
+      "elapsed_seconds_at_attempt": 5880.001,
+      "observed_utc": "2026-11-24T03:38:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 16.0,
+      "result": "ok"
+    },
+    {
+      "minute": 99,
+      "scheduled_utc": "2026-11-24T03:39:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:39:03.732+00:00",
+      "elapsed_seconds_at_attempt": 5940.0,
+      "observed_utc": "2026-11-24T03:39:03.732+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 32.0,
+      "result": "ok"
+    },
+    {
+      "minute": 100,
+      "scheduled_utc": "2026-11-24T03:40:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:40:03.732+00:00",
+      "elapsed_seconds_at_attempt": 6000.001,
+      "observed_utc": "2026-11-24T03:40:03.732+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 16.0,
+      "result": "ok"
+    },
+    {
+      "minute": 101,
+      "scheduled_utc": "2026-11-24T03:41:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:41:03.732+00:00",
+      "elapsed_seconds_at_attempt": 6060.0,
+      "observed_utc": "2026-11-24T03:41:03.732+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 16.0,
+      "result": "ok"
+    },
+    {
+      "minute": 102,
+      "scheduled_utc": "2026-11-24T03:42:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:42:03.733+00:00",
+      "elapsed_seconds_at_attempt": 6120.001,
+      "observed_utc": "2026-11-24T03:42:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 16.0,
+      "result": "ok"
+    },
+    {
+      "minute": 103,
+      "scheduled_utc": "2026-11-24T03:43:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:43:03.732+00:00",
+      "elapsed_seconds_at_attempt": 6180.001,
+      "observed_utc": "2026-11-24T03:43:03.732+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 16.0,
+      "result": "ok"
+    },
+    {
+      "minute": 104,
+      "scheduled_utc": "2026-11-24T03:44:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:44:03.733+00:00",
+      "elapsed_seconds_at_attempt": 6240.001,
+      "observed_utc": "2026-11-24T03:44:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 32.0,
+      "result": "ok"
+    },
+    {
+      "minute": 105,
+      "scheduled_utc": "2026-11-24T03:45:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:45:03.732+00:00",
+      "elapsed_seconds_at_attempt": 6300.0,
+      "observed_utc": "2026-11-24T03:45:03.732+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 16.0,
+      "result": "ok"
+    },
+    {
+      "minute": 106,
+      "scheduled_utc": "2026-11-24T03:46:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:46:03.733+00:00",
+      "elapsed_seconds_at_attempt": 6360.001,
+      "observed_utc": "2026-11-24T03:46:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 16.0,
+      "result": "ok"
+    },
+    {
+      "minute": 107,
+      "scheduled_utc": "2026-11-24T03:47:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:47:03.733+00:00",
+      "elapsed_seconds_at_attempt": 6420.001,
+      "observed_utc": "2026-11-24T03:47:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 32.0,
+      "result": "ok"
+    },
+    {
+      "minute": 108,
+      "scheduled_utc": "2026-11-24T03:48:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:48:03.732+00:00",
+      "elapsed_seconds_at_attempt": 6480.001,
+      "observed_utc": "2026-11-24T03:48:03.732+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 16.0,
+      "result": "ok"
+    },
+    {
+      "minute": 109,
+      "scheduled_utc": "2026-11-24T03:49:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:49:03.736+00:00",
+      "elapsed_seconds_at_attempt": 6540.004,
+      "observed_utc": "2026-11-24T03:49:03.736+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 16.0,
+      "result": "ok"
+    },
+    {
+      "minute": 110,
+      "scheduled_utc": "2026-11-24T03:50:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:50:03.737+00:00",
+      "elapsed_seconds_at_attempt": 6600.006,
+      "observed_utc": "2026-11-24T03:50:03.737+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 32.0,
+      "result": "ok"
+    },
+    {
+      "minute": 111,
+      "scheduled_utc": "2026-11-24T03:51:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 112,
+      "scheduled_utc": "2026-11-24T03:52:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 113,
+      "scheduled_utc": "2026-11-24T03:53:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 114,
+      "scheduled_utc": "2026-11-24T03:54:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 115,
+      "scheduled_utc": "2026-11-24T03:55:03.732+00:00",
+      "result": "missing"
+    },
+    {
+      "minute": 116,
+      "scheduled_utc": "2026-11-24T03:56:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:56:34.662+00:00",
+      "elapsed_seconds_at_attempt": 6990.93,
+      "observed_utc": "2026-11-24T03:56:34.662+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 16.0,
+      "result": "ok"
+    },
+    {
+      "minute": 117,
+      "scheduled_utc": "2026-11-24T03:57:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:57:03.733+00:00",
+      "elapsed_seconds_at_attempt": 7020.001,
+      "observed_utc": "2026-11-24T03:57:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 0.0,
+      "result": "ok"
+    },
+    {
+      "minute": 118,
+      "scheduled_utc": "2026-11-24T03:58:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:58:03.734+00:00",
+      "elapsed_seconds_at_attempt": 7080.002,
+      "observed_utc": "2026-11-24T03:58:03.734+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 0.0,
+      "result": "ok"
+    },
+    {
+      "minute": 119,
+      "scheduled_utc": "2026-11-24T03:59:03.732+00:00",
+      "attempted_utc": "2026-11-24T03:59:03.732+00:00",
+      "elapsed_seconds_at_attempt": 7140.0,
+      "observed_utc": "2026-11-24T03:59:03.732+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 0.0,
+      "result": "ok"
+    },
+    {
+      "minute": 120,
+      "scheduled_utc": "2026-11-24T04:00:03.732+00:00",
+      "attempted_utc": "2026-11-24T04:00:03.733+00:00",
+      "elapsed_seconds_at_attempt": 7200.001,
+      "observed_utc": "2026-11-24T04:00:03.733+00:00",
+      "http_status": 200,
+      "vehicle_id": 1,
+      "receipt_count": 3,
+      "total_cents": 35999,
+      "matches_fixture": true,
+      "latency_ms": 0.0,
+      "result": "ok"
+    }
+  ]
+}

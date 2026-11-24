@@ -35,7 +35,9 @@ The ZIP includes a [synthetic oil-change receipt](CarCareLog/data/demo-receipt.p
 
 The final report compares deployment options at the architecture level. Local inference keeps receipts on the owner's device and works offline once the weights are installed; the owner supplies adequate memory and compute. Hosted inference offloads model execution to the provider and requires network access, credentials, a policy for sending receipts and a plan for usage charges. Local receipt accuracy and latency are measured. Hosted performance and cost per receipt were not measured.
 
-For the optional seven-day observation on a designated computer, see the [availability procedure](docs/verification/seven-day-core-availability.md). The readiness check uses a disposable vehicle and starts no official observation.
+During the [two-hour local dashboard check](docs/evidence/two-hour-local-availability.json), 55 of 121 scheduled reads ran. All 55 returned the expected vehicle, three receipts and the correct total. The collector missed 66 slots. Monitoring resumed on the same fixture after a service restart. Service availability during the gaps is unknown.
+
+The [earlier two-minute check](docs/evidence/short-local-availability.json) recorded three successful reads and a separate planned restart. The [seven-day observation](docs/verification/seven-day-core-availability.md) remains an optional follow-up. Its 99% availability target has not been measured.
 
 | Component | Pinned version | Notes |
 | --- | --- | --- |
