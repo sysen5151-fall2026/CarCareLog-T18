@@ -37,6 +37,36 @@ async function reload(selectedId = currentId) {
     render();
   }
 }
+function renderReminder(rule) {
+  const due = rule.status === 'Due / overdue';
+  const dates = [];
+  if (rule.due_mileage !== null) dates.push(`Due at ${rule.due_mileage.toLocaleString()} km`);
+  if (rule.due_date) dates.push(`Due ${rule.due_date}`);
+  if (rule.record_id) dates.push(`Based on record #${rule.record_id}`);
+  const details = dates.join(' · ') || 'Add a matching service record to calculate the next due date.';
+  const exportAction = rule.due_date && !due
+    ? `<button class="link-button" data-calendar="${rule.id}">Save to calendar (.ics)</button>`
+    : '';
+  return `<div class="reminder"><div class="reminder-head">
+      <strong>${escapeHtml(rule.service_item)}</strong>
+      <span class="badge ${due ? 'due' : rule.status === 'Upcoming' ? 'upcoming' : ''}">${escapeHtml(rule.status)}</span></div>
+    <p>${escapeHtml(details)}</p><p class="reference">${escapeHtml(rule.reference)}</p><div class="actions">
+      ${exportAction}<button class="link-button" data-edit-reminder="${rule.id}">Edit interval</button>
+      <button class="link-button" data-delete-reminder="${rule.id}">Remove interval</button></div></div>`;
+}
+async function downloadCalendar(ruleId) {
+  const response = await fetch(`/api/reminders/${ruleId}/calendar.ics`);
+  if (!response.ok) throw new Error((await response.json()).error || 'Could not export the reminder.');
+  const url = URL.createObjectURL(await response.blob());
+  const file = document.createElement('a');
+  file.href = url;
+  file.download = `carcare-reminder-${ruleId}.ics`;
+  document.body.append(file);
+  file.click();
+  file.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  message('Calendar file downloaded. Import it into your phone calendar and check the alert. If the service date changes, replace the imported event.');
+}
 function render() {
   $('mileage-stat').textContent = data.vehicle.mileage.toLocaleString() + ' km';
   $('cost-stat').textContent = money(data.total_cents);
@@ -44,7 +74,7 @@ function render() {
   $('due-stat').textContent = data.reminders.filter(r => r.status === 'Due / overdue').length;
   $('export').href = `/api/export?vehicle_id=${currentId}`;
   $('answer').textContent = '';
-  $('reminder-list').innerHTML = data.reminders.length ? data.reminders.map(r => `<div class="reminder"><div class="reminder-head"><strong>${escapeHtml(r.service_item)}</strong><span class="badge ${r.status === 'Due / overdue' ? 'due' : r.status === 'Upcoming' ? 'upcoming' : ''}">${escapeHtml(r.status)}</span></div><p>${r.due_mileage !== null ? `Due at ${r.due_mileage.toLocaleString()} km` : ''}${r.due_mileage !== null && r.due_date ? ' · ' : ''}${r.due_date ? `Due ${r.due_date}` : ''}${r.record_id ? ` · Based on record #${r.record_id}` : 'Add a matching service record to calculate the next due date.'}</p><p class="reference">${escapeHtml(r.reference)}</p><div class="actions"><button class="link-button" data-edit-reminder="${r.id}">Edit interval</button><button class="link-button" data-delete-reminder="${r.id}">Remove interval</button></div></div>`).join('') : '<p class="empty-inline">No intervals configured. Use your vehicle manual to set one.</p>';
+  $('reminder-list').innerHTML = data.reminders.length ? data.reminders.map(renderReminder).join('') : '<p class="empty-inline">No intervals configured. Use your vehicle manual to set one.</p>';
   const max = Math.max(1, ...data.monthly.map(m => m.Maintenance + m.Repair));
   $('spending-list').innerHTML = data.monthly.length ? data.monthly.map(m => `<div class="spending-row"><span>${m.month}</span><div class="bar" aria-label="Maintenance ${money(m.Maintenance)}, repairs ${money(m.Repair)}"><span class="maintenance-bar" style="width:${m.Maintenance/max*100}%"></span><span class="repair-bar" style="width:${m.Repair/max*100}%"></span></div><span class="amount">${money(m.Maintenance+m.Repair)}</span></div>`).join('') + '<p class="legend"><span class="maintenance-bar"></span>Maintenance &nbsp; <span class="repair-bar"></span>Repair</p>' : '<p class="empty-inline">Monthly spending appears after you save a record.</p>';
   renderRecords();
@@ -395,6 +425,7 @@ document.addEventListener('click', async event => {
     }
     if (target.dataset.close) $(target.dataset.close).close();
     if (target.dataset.edit) editRecord(data.records.find(r => r.id === Number(target.dataset.edit)));
+    if (target.dataset.calendar) await downloadCalendar(target.dataset.calendar);
     if (target.dataset.editReminder) editReminder(data.reminders.find(r => r.id === Number(target.dataset.editReminder)));
     if (target.dataset.delete && confirm('Delete this confirmed service record?')) {
       await api(`/api/records/${target.dataset.delete}`, 'DELETE'); await reload(); message('Record deleted. Current odometer mileage is retained.');

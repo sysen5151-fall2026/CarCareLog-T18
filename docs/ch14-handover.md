@@ -4,6 +4,8 @@ This guide is for a maintainer receiving the T18 build. The local browser applic
 
 The poster release adds [a classroom quick start](../README.md#quick-start-for-poster-visitors). A visitor can download or clone the branch and start it on their own device. Adding `--accounts` turns on local registration, sign-in and account-specific storage. Adding `--ai` turns on the loopback model. Scope and controls for account mode are recorded in [ADR 013](adr-013-local-owner-accounts.md).
 
+The classroom build also [exports a future service date and a calendar alert](evidence/local-calendar-export.md). The owner imports the file into a chosen calendar. Seven-day core availability can be measured with the [V07 observation procedure](verification/seven-day-core-availability.md). A short tool rehearsal leaves the seven-day result open.
+
 ## Installation and first run
 
 1. Check out the release revision recorded in the report. Install a Python version exercised by the repository CI (Python 3.12 is a suitable choice) and check `python --version`. The application uses SQLite and the Python standard library. No Python dependencies need downloading.

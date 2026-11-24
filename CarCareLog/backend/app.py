@@ -17,12 +17,14 @@ from time import perf_counter
 from urllib.parse import parse_qs, urlsplit
 
 if __package__:
+    from .calendar_export import reminder_event
     from .history import history_answer
     from .receipt_runtime import MAX_IMAGE_BASE64, ReceiptRuntimeUnavailable, draft_receipt, validate_image
     from .function_f22 import (add_months, checked_service_items, insert_additional_services, validate_and_route_owner_request,
         coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders,
         coordinate_ai_requests_and_responses, OperationConflict, OperationGone, PossibleDuplicate)
 else:
+    from calendar_export import reminder_event
     from history import history_answer
     from receipt_runtime import MAX_IMAGE_BASE64, ReceiptRuntimeUnavailable, draft_receipt, validate_image
     from function_f22 import (add_months, checked_service_items, insert_additional_services, validate_and_route_owner_request,
@@ -402,6 +404,21 @@ class Handler(BaseHTTPRequestHandler):
                     db.execute("UPDATE vehicles SET mileage=max(mileage,?) WHERE id=?", (fields[3], row["vehicle_id"]))
                 db.commit()
                 return self.reply({"ok": True})
+            match = re.fullmatch(r"/api/reminders/(\d+)/calendar\.ics", path)
+            if match and self.command == "GET":
+                if len(match[1]) > 19 or int(match[1]) > 2**63 - 1:
+                    raise LookupError("Reminder not found.")
+                rule_id = int(match[1])
+                db.execute("BEGIN IMMEDIATE")
+                entry = db.execute("SELECT vehicle_id FROM reminders WHERE id=?", (rule_id,)).fetchone()
+                if entry is None:
+                    raise LookupError("Reminder not found.")
+                summary = dashboard(db, entry["vehicle_id"])
+                rule = next(item for item in summary["reminders"] if item["id"] == rule_id)
+                event = reminder_event(db, summary["vehicle"], rule)
+                db.commit()
+                return self.reply(event, content_type="text/calendar; charset=utf-8",
+                                  filename=f"carcare-reminder-{rule_id}-{rule['due_date']}.ics")
             if path == "/api/reminders" and self.command == "POST":
                 car_id = integer(body, "vehicle_id", minimum=1)
                 vehicle(db, car_id)

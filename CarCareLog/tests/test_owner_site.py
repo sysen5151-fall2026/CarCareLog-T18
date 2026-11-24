@@ -81,6 +81,22 @@ class OwnerSiteTest(unittest.TestCase):
         self.assertNotIn("Second owner", str(self.request("GET", "/api/vehicles", cookie=a)[1]))
         self.assertEqual(self.request("POST", "/api/demo", {}, b, origin="https://other.example")[0], 403)
 
+    def test_calendar_download_is_scoped_to_signed_in_ledger(self):
+        a, b = self.register("calendar-a"), self.register("calendar-b")
+        self.request("POST", "/api/demo", {}, cookie=a)
+        dashboard = self.request("GET", "/api/dashboard?vehicle_id=1", cookie=a)[1]
+        rule = next(r for r in dashboard["reminders"] if r["service_item"] == "Tire rotation")
+        path = f'/api/reminders/{rule["id"]}/calendar.ics'
+        status, event, headers = self.request("GET", path, cookie=a)
+        self.assertEqual(status, 200)
+        self.assertIn("text/calendar", headers["Content-Type"])
+        self.assertIn(".ics", headers["Content-Disposition"])
+        self.assertIn("BEGIN:VALARM", event)
+        self.assertEqual(self.request("GET", path, cookie=b)[0], 404)
+        self.assertEqual(self.request("GET", path)[0], 401)
+        self.assertEqual(self.request("GET", "/api/reminders/bad/calendar.ics", cookie=a)[0], 404)
+        self.assertEqual(self.request("GET", "/api/reminders/999999999999999999999/calendar.ics", cookie=a)[0], 404)
+
     def test_login_logout_rotation_and_expiration(self):
         a = self.register("Returning.Owner")
         self.assertIn('id="sign-out"', self.request("GET", "/", cookie=a)[1])

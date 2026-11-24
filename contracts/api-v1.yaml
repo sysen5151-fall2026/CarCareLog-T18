@@ -16,6 +16,21 @@
     }
   ],
   "paths": {
+    "/api/reminders/{id}/calendar.ics": {
+      "get": {
+        "operationId": "exportMaintenanceCalendarEvent",
+        "summary": "Download a calendar event and display alarm for a future service date",
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}
+        ],
+        "responses": {
+          "200": {"description": "One VEVENT and one VALARM", "content": {"text/calendar": {"schema": {"type": "string"}}}},
+          "400": {"description": "The service lacks a future due date or is due already"},
+          "401": {"description": "Sign-in required in account mode"},
+          "404": {"description": "No such reminder in this ledger"}
+        }
+      }
+    },
     "/api/records": {
       "post": {
         "operationId": "createConfirmedRecord",

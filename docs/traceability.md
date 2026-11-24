@@ -1,5 +1,7 @@
 # Model requirement to implementation traceability
 
+UC.2 and SR07–SR08 use F.2.2.4 to calculate due mileage and dates from confirmed maintenance. The [calendar export](../CarCareLog/backend/calendar_export.py) consumes the calculated future date unchanged and adds a calendar event and alert at the owner's request. The [export checks](evidence/local-calendar-export.md) establish file and alarm contents. Phone import and notification delivery depend on the selected calendar. For V07, a [separate seven-day monitor](verification/seven-day-core-availability.md) can collect real core-read observations over the specified window.
+
 Revision: Lab 13 update, December 2026 (TA4 baseline 3 November 2026). Code root: `CarCareLog/`. Native model snapshot: consolidated T18, 31 October 2026. Requirement numbers are document-scoped; native IDs disambiguate them.
 
 All 22 populated ASR leaves are listed. A test name records selected evidence, not full requirement closure. The native requirements remain Draft. Exact statements are retained in `docs/requirements-baseline.json`.

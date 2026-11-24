@@ -27,6 +27,8 @@ Revision: local vision build, November 22, 2026. Covers registered HTTP operatio
 
 The default single-owner entry point exposes the internal adapters on loopback. The optional account entry point returns 404 for the internal adapters and authenticates the listed product routes, including history, export, receipt drafting and demo seeding. Owner confirmation is still required to save a record. Neither mode offers a vehicle-deletion operation.
 
+Both local entry points offer `GET /api/reminders/{id}/calendar.ics` for a future dated service interval. The service derives the date from confirmed record history and the owner’s interval rule. The response downloads a calendar event with a display alarm. An interval without a future date, or one already due by mileage, returns HTTP 400. A missing reminder, including an ID outside the signed-in ledger, returns HTTP 404.
+
 ### Additional routes in local account mode
 
 | Method and route | Result |

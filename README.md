@@ -23,6 +23,8 @@ To try **AI drafting from a receipt photo or text**, install and start [Ollama](
 
 The ZIP includes a [synthetic oil-change receipt](CarCareLog/data/demo-receipt.png) for the image workflow. Choose that file from the extracted `CarCareLog/data` folder. The printed total is $43.19 after a $10 coupon. The [product replay](docs/evidence/local-poster-image-smoke.json) records the draft, owner confirmation and saved record after restart. The [local account check](docs/evidence/local-owner-demo-2026-11-23.md) documents signup, sign-in and separate histories.
 
+**Try a phone calendar reminder.** Load the demo data, find **Tire rotation** in **Maintenance reminders** and choose **Save to calendar (.ics)**. Transfer the file to your phone, open it in a calendar that supports iCalendar import, and check the event and its alert before saving. A future service date exports at 09:00 in the calendar's local time, with a display alert one day earlier. For a service due tomorrow, the alert is at 09:00 on the due date. Mileage-only, already-due and missing-history rules remain on the dashboard. The file is a snapshot. Replace it in your calendar if your service date changes.
+
 ## Pinned versions
 
 | Component | Pinned version | Notes |
@@ -143,7 +145,7 @@ The service provider gives receipts to the owner outside the application. There 
 | Use case | Current build |
 | --- | --- |
 | UC.1 Maintenance records | Create, edit, delete, search or export confirmed records. A new record can contain several services on one receipt. A new save checks for an existing entry with the same vehicle, date, shop and total. Changing a receipt source invalidates its AI draft. |
-| UC.2 Maintenance reminders | A rule uses a source reference and a mileage or calendar interval. The separate warning window is 500 international miles (804.672 km) or 30 days from a due limit. |
+| UC.2 Maintenance reminders | A rule uses a source reference and a mileage or calendar interval. The dashboard warning window is 500 international miles (804.672 km) or 30 days. A future dated service can also be exported to the owner's calendar with a local alert. |
 | UC.3 Maintenance expenses | Each confirmed receipt contributes its total once to recorded spending and the monthly chart. Its category applies to the whole receipt. |
 | UC.4 Record questions | Four history lookups cover total spending, last oil change, last tire-rotation mileage and brake spending for the year. Use a source link to open its record. A mixed-service receipt without item prices is identified separately in brake-spending answers. Free-form and vehicle-manual questions remain open. |
 
@@ -156,5 +158,6 @@ The service provider gives receipts to the owner outside the application. There 
 - [Interface contract](contracts/api-v1.yaml), [route table](docs/route-table.md), and [traceability](docs/traceability.md)
 - [Receipt runtime tests](CarCareLog/tests/test_receipt_runtime.py), [draft check tests](CarCareLog/tests/test_receipt_review.py), [evaluation tests](CarCareLog/tests/test_receipt_evaluation.py), and [requirement coverage](CarCareLog/docs/MVP_SCOPE.md)
 - [Chapter 10 simulation evidence](docs/modeling-and-simulation.md) and [historical Milestone 2 demo](docs/DEMO_RELEASE.md)
+- [Calendar file and alarm verification](docs/evidence/local-calendar-export.md) and [seven-day core-read measurement procedure](docs/verification/seven-day-core-availability.md)
 
 From `CarCareLog/`, run `py -3 -m unittest discover -s tests -v` on Windows or `python3 -m unittest discover -s tests -v` on macOS or Linux. The tests use temporary databases and a loopback stand-in for the model runtime. They check the application's handling of drafts, failures, and timeouts. Model accuracy and latency come from the evaluation tool, not from the unit tests.
