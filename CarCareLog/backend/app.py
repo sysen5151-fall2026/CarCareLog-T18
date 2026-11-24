@@ -17,6 +17,8 @@ from time import perf_counter
 from urllib.parse import parse_qs, urlsplit
 
 if __package__:
+    from . import knowledge, manuals
+    from .recovery import RecoveryManager
     from .calendar_export import reminder_event
     from .history import history_answer
     from .receipt_runtime import MAX_IMAGE_BASE64, ReceiptRuntimeUnavailable, draft_receipt, validate_image
@@ -24,6 +26,9 @@ if __package__:
         coordinate_confirmed_record_transaction, calculate_maintenance_summary_and_reminders,
         coordinate_ai_requests_and_responses, OperationConflict, OperationGone, PossibleDuplicate)
 else:
+    import knowledge
+    import manuals
+    from recovery import RecoveryManager
     from calendar_export import reminder_event
     from history import history_answer
     from receipt_runtime import MAX_IMAGE_BASE64, ReceiptRuntimeUnavailable, draft_receipt, validate_image
@@ -80,6 +85,7 @@ def init_db(path=None):
             PRIMARY KEY (vehicle_id, operation_id)
         );
         """)
+        manuals.init_schema(db)
 
 
 def text_field(body, key, required=True, limit=1000):
@@ -277,12 +283,14 @@ class Handler(BaseHTTPRequestHandler):
         parts = urlsplit(self.path)
         path = parts.path
         query = parse_qs(parts.query)
-        if self.command == "GET" and path in ("/", "/app.js", "/styles.css"):
+        if self.command == "GET" and path in ("/", "/app.js", "/manual.js", "/questions.js", "/styles.css"):
             file_name = "index.html" if path == "/" else path[1:]
-            media = {"index.html": "text/html", "app.js": "text/javascript", "styles.css": "text/css"}[file_name]
+            media = {".html": "text/html", ".js": "text/javascript", ".css": "text/css"}[Path(file_name).suffix]
             return self.reply((ROOT / "frontend" / file_name).read_bytes(), content_type=media + "; charset=utf-8")
         receipt_route = path in ("/api/receipt-draft", "/internal/v1/coordinate-ai") and self.command == "POST"
         max_bytes = MAX_IMAGE_BASE64 + 1024 if receipt_route else 50_000
+        if path == "/api/manual/import" and self.command == "POST":
+            max_bytes = manuals.MAX_REQUEST_BYTES
         body = self.body(max_bytes) if self.command in ("POST", "PUT") else {}
         with closing(self.open_ledger()) as db, db:
             # Thin localhost-only contract adapters. They reuse the same model
@@ -320,6 +328,28 @@ class Handler(BaseHTTPRequestHandler):
                     if body.get('kind') not in ('receipt','question'):
                         raise ValueError('AI request kind must be receipt or question.')
                     return self.receipt_draft(db, body)
+            if path in ("/api/manual", "/api/manual/page") and self.command == "GET":
+                params = {key: values[0] for key, values in query.items()}
+                car_id = integer(params, "vehicle_id", minimum=1)
+                vehicle(db, car_id)
+                if path == "/api/manual/page":
+                    return self.reply(manuals.source_page(db, car_id, integer(params, "manual_id", minimum=1),
+                                                         integer(params, "page", minimum=1)))
+                return self.reply(manuals.summary(db, car_id))
+            if self.command == "POST" and path in ("/api/manual/import", "/api/manual/confirm", "/api/questions"):
+                car_id = integer(body, "vehicle_id", minimum=1)
+                vehicle(db, car_id)
+                if path == "/api/questions":
+                    question = text_field(body, "question", limit=600)
+                    result = knowledge.answer_question(question, all_records(db, car_id),
+                        manuals.manual_evidence(db, car_id), today=date.today(), source=body.get("source", "auto"),
+                        model=os.environ.get("CARCARE_OLLAMA_MODEL", "").strip())
+                elif path == "/api/manual/import":
+                    result = manuals.import_manual(db, car_id, body)
+                else:
+                    result = manuals.confirm_interval(db, car_id, body)
+                db.commit()
+                return self.reply(result)
             if path == "/api/receipt-draft" and self.command == "POST":
                 return self.receipt_draft(db, {**body, "kind": "receipt"})
             if path == "/api/receipt-assist" and self.command == "GET":
@@ -462,14 +492,14 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    init_db()
-    port = int(os.environ.get("CARCARE_PORT", "8000"))
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"CarCareLog is running at http://127.0.0.1:{port}", flush=True)
-    print(f"Press Ctrl+C to stop. Your records are saved in {DB_PATH}.", flush=True)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
+    with RecoveryManager.for_ledger(DB_PATH) as recovery:
+        init_db()
+        port = int(os.environ.get("CARCARE_PORT", "8000"))
+        with ThreadingHTTPServer(("127.0.0.1", port), Handler) as server:
+            recovery.start()
+            print(f"CarCareLog is running at http://127.0.0.1:{port}", flush=True)
+            print(f"Press Ctrl+C to stop. Your records are saved in {DB_PATH}.", flush=True)
+            try:
+                server.serve_forever()
+            except KeyboardInterrupt:
+                pass

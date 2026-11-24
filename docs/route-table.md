@@ -41,3 +41,7 @@ Both local entry points offer `GET /api/reminders/{id}/calendar.ics` for a futur
 | GET /health | Returns a program status without account or ledger data. |
 
 This entry point binds to 127.0.0.1. All mutations require the configured local origin. The browser identifies its current workspace so that a form opened before an account switch cannot save into the newly signed-in owner's ledger. See [ADR 013](adr-013-local-owner-accounts.md).
+
+## Manual sources and vehicle questions
+
+All routes use the selected vehicle and the active owner's ledger. GET /api/manual lists the active document and interval candidates. POST /api/manual/import stores a text, PDF or publisher source. GET /api/manual/page returns a cited page. POST /api/manual/confirm applies a reviewed candidate. POST /api/questions returns source-linked record results, manual passages or an evidence gap. Manual import alone never changes a reminder.

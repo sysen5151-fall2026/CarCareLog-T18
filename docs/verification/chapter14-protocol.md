@@ -1,5 +1,7 @@
 # Chapter 14 verification protocol
 
+**Submission context (November 23).** The acceptance criteria below retain their original technical meaning. The TA permits assumed inputs and simulations for the course submission, and optional small owner samples. Present simulations, synthetic model accuracy, and any observed participant times separately. A short service observation can be reported with its actual duration. It cannot establish the seven-day V07 threshold.
+
 Frozen before executing this chapter's new verification trials. The November 19 and November 22 receipt evaluations predate this protocol and will be identified as historical baseline evidence. All eight selected entity IDs were taken from the T18 project 746 export. Method choices below are the report's proposed Innoslate labels unless verified in the live project.
 
 | Case | Entity | Method | Acceptance fixed before trials |

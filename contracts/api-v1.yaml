@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "CarCareLog local prototype contract",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "description": "Internal HTTP adapters expose the modeled in-process functions. The public local record endpoint supports the Chapter 10 baseline and opt-in bundled response. Lab 13 adds the browser receipt-draft route, which calls the pinned local model and returns a checked draft for owner review. The vision build accepts an image on the same review-only endpoint."
   },
   "servers": [
@@ -16,6 +16,37 @@
     }
   ],
   "paths": {
+    "/api/manual": {
+      "get": {"operationId": "getVehicleManual", "summary": "Current manual, publisher or upload provenance and proposed intervals",
+        "parameters": [{"$ref": "#/components/parameters/VehicleIdQuery"}],
+        "responses": {"200": {"description": "Current document or null, with its interval candidates"}, "404": {"description": "No vehicle in this ledger"}}}
+    },
+    "/api/manual/page": {
+      "get": {"operationId": "getManualPage", "summary": "Read a cited page of a current or archived vehicle manual",
+        "parameters": [{"$ref": "#/components/parameters/VehicleIdQuery"},
+          {"name":"manual_id","in":"query","required":true,"schema":{"type":"integer","minimum":1}},
+          {"name":"page","in":"query","required":true,"schema":{"type":"integer","minimum":1}}],
+        "responses": {"200":{"description":"Quoted source in context"}, "404":{"description":"Page or document not found for vehicle"}}}
+    },
+    "/api/manual/import": {
+      "post": {"operationId":"importVehicleManual","summary":"Import one source, without applying a reminder",
+        "requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["vehicle_id","title"],
+          "properties":{"vehicle_id":{"type":"integer","minimum":1},"title":{"type":"string"},"text":{"type":"string"},"source_url":{"type":"string","format":"uri"},"file_base64":{"type":"string","format":"byte"}},
+          "oneOf":[{"required":["text"]},{"required":["file_base64"]},{"required":["source_url"]}]}}}},
+        "responses":{"200":{"description":"Imported source and candidate intervals"},"400":{"description":"Unsupported, unreadable or oversized source"}}}
+    },
+    "/api/manual/confirm": {
+      "post":{"operationId":"confirmManualInterval","summary":"Apply one owner-reviewed candidate from the current manual",
+        "requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["vehicle_id","manual_id","candidate_index","owner_confirmed"],
+          "properties":{"vehicle_id":{"type":"integer","minimum":1},"manual_id":{"type":"integer","minimum":1},"candidate_index":{"type":"integer","minimum":0},"owner_confirmed":{"type":"boolean","enum":[true]}}}}}},
+        "responses":{"200":{"description":"Saved interval with its source reference"},"400":{"description":"Confirmation absent or stale"}}}
+    },
+    "/api/questions": {
+      "post":{"operationId":"askVehicleQuestion","summary":"Answer from the selected vehicle's confirmed records or imported manual",
+        "requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["vehicle_id","question"],
+          "properties":{"vehicle_id":{"type":"integer","minimum":1},"question":{"type":"string","minLength":1,"maxLength":600},"source":{"type":"string","enum":["auto","history","manual"]}}}}}},
+        "responses":{"200":{"description":"Answer, method, record IDs and cited manual passages, or an explicit evidence gap"},"404":{"description":"No vehicle in this ledger"}}}
+    },
     "/api/reminders/{id}/calendar.ics": {
       "get": {
         "operationId": "exportMaintenanceCalendarEvent",
@@ -1067,6 +1098,9 @@
     }
   },
   "components": {
+    "parameters": {
+      "VehicleIdQuery": {"in":"query","name":"vehicle_id","required":true,"schema":{"type":"integer","minimum":1}}
+    },
     "schemas": {
       "Error": {
         "type": "object",

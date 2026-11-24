@@ -81,6 +81,26 @@ class OwnerSiteTest(unittest.TestCase):
         self.assertNotIn("Second owner", str(self.request("GET", "/api/vehicles", cookie=a)[1]))
         self.assertEqual(self.request("POST", "/api/demo", {}, b, origin="https://other.example")[0], 403)
 
+    def test_owner_scoped_manual_and_question_with_colliding_vehicle_ids(self):
+        owner_a, owner_b = self.register("manual-a"), self.register("manual-b")
+        for cookie in (owner_a, owner_b):
+            self.assertEqual(self.request("POST", "/api/demo", {}, cookie)[0], 201)
+        _, result, _ = self.request("POST", "/api/manual/import", {
+            "vehicle_id": 1, "title": "Owner A test guide", "text": "Rotate tires every 9,000 km."}, owner_a)
+        manual_id = result["manual"]["id"]
+        page = f"/api/manual/page?manual_id={manual_id}&vehicle_id=1&page=1"
+        self.assertEqual(self.request("GET", page, cookie=owner_b)[0], 404)
+        self.assertEqual(self.request("GET", page)[0], 401)
+        self.assertIsNone(self.request("GET", "/api/manual?vehicle_id=1", cookie=owner_b)[1]["manual"])
+        question = {"vehicle_id": 1, "source": "manual", "question": "How often should I rotate tires?"}
+        self.assertTrue(self.request("POST", "/api/questions", question, owner_a)[1]["manual_sources"])
+        self.assertEqual(self.request("POST", "/api/questions", question, owner_b)[1]["manual_sources"], [])
+        confirm = {"vehicle_id": 1, "manual_id": manual_id, "candidate_index": 0, "owner_confirmed": True}
+        self.assertNotEqual(self.request("POST", "/api/manual/confirm", confirm, owner_b)[0], 200)
+        self.assertEqual(self.request("POST", "/api/manual/confirm", confirm, owner_a)[0], 200)
+        rules = self.request("GET", "/api/dashboard?vehicle_id=1", cookie=owner_a)[1]["reminders"]
+        self.assertEqual(next(r["interval_km"] for r in rules if r["service_item"] == "Tire rotation"), 9000)
+
     def test_calendar_download_is_scoped_to_signed_in_ledger(self):
         a, b = self.register("calendar-a"), self.register("calendar-b")
         self.request("POST", "/api/demo", {}, cookie=a)

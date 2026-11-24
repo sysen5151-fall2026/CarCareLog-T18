@@ -63,3 +63,7 @@ The test observation date is 2026-11-03. Service interval examples remain 8,000 
 ## Chapter 10 comparison
 
 See the [Modeling and Simulation evidence map](modeling-and-simulation.md) for the UC.1 scenario A and B traces, performance observations and timing requirements. This experiment adds evidence for the manual workflow and leaves the modeled requirement statements and their acceptance status as recorded.
+
+## Classroom implementation update
+
+The earlier trace rows describe their recorded baseline. UC.2 / SR06 now maps to `manuals.py` and `test_manuals.py`; UC.4 / SR10–11 maps to `knowledge.py` and `test_vehicle_questions.py`. Both use the selected owner's ledger. SR18 maps to `recovery.py`, `test_recovery.py` and the [same-disk recovery drill](evidence/local-recovery-drill.json). Broader four-function coordination and hosting claims require separate evidence.

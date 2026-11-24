@@ -40,5 +40,5 @@ The harness creates an isolated database per trial, performs one warm-up pair, a
 | --- | --- |
 | [SRD 2.1.3](https://cloud.innoslate.com/cornell/p/746/database/entity/263266) / SR05 | Open. Receipt-assisted usability needs first-time owner testing against the 180-second criterion. |
 | [SRD 2.1.2](https://cloud.innoslate.com/cornell/p/746/database/entity/263265) / SR14 | Open. The 99% target requires a seven-day pilot. |
-| [SRD 2.1.4](https://cloud.innoslate.com/cornell/p/746/database/entity/263267) / SR18 | Partial evidence. The isolated restore passed SQLite integrity and dashboard checks. The 24-hour recovery-point age still needs verification. |
+| [SRD 2.1.4](https://cloud.innoslate.com/cornell/p/746/database/entity/263267) / SR18 | Partial evidence. The isolated restore passed SQLite integrity and dashboard checks. In the subsequent [classroom drills](evidence/local-recovery-drill.json), snapshot age at failure was bounded by 0.0277 s / 0.0426 s for single-owner / account mode. A recent same-disk snapshot and app restart were available in each case. |
 | [SR08](https://cloud.innoslate.com/cornell/p/746/database/entity/245392) | The Upcoming warning is within 500 miles (804.672 km) or 30 days of a due threshold. The classroom maintenance interval is a separate example of 8,000 km or six months. |

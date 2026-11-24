@@ -103,14 +103,14 @@ def report(db, now):
     }
 
 
-def collect(db, config):
+def collect(db, config, read=core_read):
     start = config[0]
     end = start + MINUTES * 60
     print("Collecting from the synthetic vehicle dashboard. Ctrl+C stops the monitor. Resume with the same evidence file.",
           flush=True)
     while time.time() < end:
         now = time.time()
-        observe(db, config, now)
+        observe(db, config, now, read=read)
         next_slot = max(0, int((now - start) // 60) + 1)
         sleep_for = min(end, start + next_slot * 60) - time.time()
         if sleep_for > 0:

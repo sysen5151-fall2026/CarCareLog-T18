@@ -1,0 +1,25 @@
+{
+  "tested_on": "2026-11-23",
+  "method": "Imported public manufacturer sources with the application manual reader from a disposable local ledger. No owner or vehicle data was sent.",
+  "official_html": {
+    "title": "Tesla Model 3 DIY Guide, Vehicle Service Intervals",
+    "url": "https://service.tesla.com/docs/Public/diy/model3/en_us/GUID-A84FDD77-7A8C-42F6-9385-E3F9CEE245A4.html",
+    "sha256": "5b718b2fc45cea607250f624ef0dd3a4d943ecbca7ceb99a3b96b6ec3962d661",
+    "downloaded_bytes": 35494,
+    "verification": "publisher_https",
+    "candidate": "Tire rotation",
+    "candidate_page_or_section": 1,
+    "suggested_interval_km": 10000,
+    "retained_earlier_tread_wear_condition_in_source_quote": true,
+    "sqlite_interval_km_after_explicit_confirmation": 10000
+  },
+  "official_pdf": {
+    "title": "2024 Corolla Warranty & Maintenance Guide",
+    "url": "https://assets.sia.toyota.com/publications/en/omms-s/T-MMS-24Corolla/pdf/T-MMS-24Corolla.pdf",
+    "sha256": "f0852ba5af6ae082c1647fb9d3e52e7482686270b314b9b85c5f8cf8d03a6ee4",
+    "downloaded_bytes": 1612515,
+    "pdf_pages_including_cover": 66,
+    "automatic_candidates": 0,
+    "scope": "The document uses multi-column mileage milestones. A readable document can yield zero explicit recurring rules; the owner can inspect the source and set an interval manually."
+  }
+}

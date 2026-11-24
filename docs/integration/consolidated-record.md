@@ -100,3 +100,7 @@ Consult the root README, the two dated benchmark records, ADR 011 (historical), 
 ## Integration sequence in the team model
 
 The four-step integration Action Diagram is T18 entity 319958. See the [native Innoslate diagram](https://cloud.innoslate.com/cornell/p/746/diagrams/action/319958) and the [unmodified Innoslate PNG export](native-integration-action-319958.png).
+
+## Subsequent classroom release
+
+The earlier rows retain the integration baseline they describe. The current build imports manual evidence and suggests owner-confirmed intervals, answers typed record and manual questions, and snapshots and restores local ledgers. See [current traceability](../traceability.md#classroom-implementation-update) for code, tests and scope.

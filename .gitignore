@@ -12,6 +12,7 @@ venv/
 *.db-journal
 *.db-wal
 *.db-shm
+.carcare-recovery*/
 chapter10-bench/
 
 # OS files

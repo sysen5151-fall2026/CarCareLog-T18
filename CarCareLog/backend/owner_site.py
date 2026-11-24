@@ -47,6 +47,7 @@ class Site:
         self.ledgers.mkdir(parents=True, exist_ok=True)
         self.database = self.folder / "accounts.sqlite3"
         self.lock = threading.Lock()
+        self.initialized_ledgers = set()
         self.attempts = defaultdict(deque)
         self.capacity = threading.BoundedSemaphore(2)
         self.inference = threading.BoundedSemaphore(1)
@@ -71,6 +72,13 @@ class Site:
 
     def ledger(self, owner_id):
         return self.ledgers / (owner_id + ".sqlite3")
+
+    def initialize_ledger(self, owner_id):
+        # Existing owners can arrive with a session created by an earlier release.
+        with self.lock:
+            if owner_id not in self.initialized_ledgers:
+                app.init_db(self.ledger(owner_id))
+                self.initialized_ledgers.add(owner_id)
 
     def allow_attempt(self, peer, username):
         now = time.monotonic()
@@ -97,7 +105,7 @@ class Site:
                     db.execute("INSERT INTO owners VALUES(?,?,?,?)", (owner_id, username, salt, digest))
                 except sqlite3.IntegrityError:
                     return None
-                app.init_db(self.ledger(owner_id))
+                self.initialize_ledger(owner_id)
             else:
                 row = db.execute("SELECT id,salt,password FROM owners WHERE username=?", (username,)).fetchone()
                 candidate = password_digest(password, row[1] if row else DUMMY_SALT)
@@ -161,6 +169,7 @@ class AccountHandler(app.Handler):
         self._cookie = f"{self.site.cookie_name}={value}; Path=/; HttpOnly; SameSite=Strict; Max-Age={lifetime}"
 
     def open_ledger(self):
+        self.site.initialize_ledger(self.owner[0])
         return app.connect(self.site.ledger(self.owner[0]))
 
     def auth(self, path):
@@ -194,7 +203,7 @@ class AccountHandler(app.Handler):
         path = urlsplit(self.path).path
         if self.command == "GET" and path == "/health":
             return self.reply({"status": "ok"})
-        if self.command == "GET" and path in {"/styles.css", "/app.js", "/account.js", "/signin.js"}:
+        if self.command == "GET" and path in {"/styles.css", "/app.js", "/account.js", "/signin.js", "/manual.js", "/questions.js"}:
             media = "text/css" if path == "/styles.css" else "text/javascript"
             return self.reply((app.ROOT / "frontend" / path[1:]).read_bytes(), content_type=media + "; charset=utf-8")
         if self.command == "POST" and path in {"/api/auth/login", "/api/auth/register"}:
@@ -226,9 +235,9 @@ class AccountHandler(app.Handler):
             return self.reply({"error": "Please sign in to your workspace."}, 401)
         if self.command == "GET" and path == "/api/auth/session":
             return self.reply({"username": self.owner[1]})
-        if self.command == "POST" and path == "/api/receipt-draft":
+        if self.command == "POST" and path in ("/api/receipt-draft", "/api/questions"):
             if not self.site.inference.acquire(blocking=False):
-                return self.reply({"error": "The receipt assistant is busy. Try again shortly or enter the record manually."}, 429)
+                return self.reply({"error": "The local assistant is busy. Try again shortly."}, 429)
             try:
                 return super().dispatch()
             finally:
@@ -249,6 +258,8 @@ def make_server(port, folder):
 if __name__ == "__main__":
     port = int(os.environ.get("CARCARE_PORT", "8000"))
     folder = os.environ.get("CARCARE_SITE_DIR", Path.home() / ".carcarelog-site")
-    with make_server(port, folder) as service:
-        print(f"CarCareLog account site: {service.site.origin}", flush=True)
-        service.serve_forever()
+    with app.RecoveryManager.for_accounts(folder) as recovery:
+        with make_server(port, folder) as service:
+            recovery.start()
+            print(f"CarCareLog account site: {service.site.origin}", flush=True)
+            service.serve_forever()

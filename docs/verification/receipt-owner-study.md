@@ -1,5 +1,7 @@
 # Camera receipts and first-time owner study
 
+For the poster and final report, the course accepts labeled assumptions and simulation. A participant study is optional. The ten-owner procedure below describes the team's original design target if that target is evaluated in full. For a small convenience sample, give the actual denominator, time and accurate completions, alongside the expected outcome. The team has no observed human success rate at this release.
+
 The product team can run two checks with the production web form, reviewed receipt fields and real local Ollama model. The camera benchmark measures extraction. The owner study measures whether a first-time user can independently save an accurate record within 180 seconds, as defined in [V03](chapter14-protocol.md). The archived [20 clean synthetic images](../evidence/chapter14-qwen35-receipt-images.md) provide a separate baseline.
 
 ## Prepare photographs and answer keys

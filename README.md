@@ -6,7 +6,7 @@ CarCareLog keeps a vehicle's confirmed service history, costs, and maintenance r
 
 ## Quick start for poster visitors
 
-1. [Download the classroom build as a ZIP](https://github.com/sysen5151-fall2026/CarCareLog-T18/archive/refs/heads/final-poster-demo.zip) and extract it. Open a terminal in the extracted folder containing `run_demo.py`. You need [Python 3.10 or later](https://www.python.org/downloads/). All app dependencies come with Python.
+1. [Download the classroom build as a ZIP](https://github.com/sysen5151-fall2026/CarCareLog-T18/archive/refs/heads/final-poster-demo.zip) and extract it. Open a terminal in the extracted folder containing `run_demo.py`. You need [Python 3.10 or later](https://www.python.org/downloads/). The core workflow uses the Python standard library. To import PDF manuals, install the pinned reader with `python -m pip install -r CarCareLog/requirements-manual-pdf.txt` using the same Python as the launcher.
 2. Start the app with the command for your computer.
 
    | Windows PowerShell | macOS or Linux terminal |
@@ -25,12 +25,22 @@ The ZIP includes a [synthetic oil-change receipt](CarCareLog/data/demo-receipt.p
 
 **Try a phone calendar reminder.** Load the demo data, find **Tire rotation** in **Maintenance reminders** and choose **Save to calendar (.ics)**. Transfer the file to your phone, open it in a calendar that supports iCalendar import, and check the event and its alert before saving. A future service date exports at 09:00 in the calendar's local time, with a display alert one day earlier. For a service due tomorrow, the alert is at 09:00 on the due date. Mileage-only, already-due and missing-history rules remain on the dashboard. The file is a snapshot. Replace it in your calendar if your service date changes.
 
+**Try a vehicle manual.** In Maintenance reminders, import a text-based PDF, paste manual text, or select an approved publisher URL. A direct [Tesla tire-rotation page](https://service.tesla.com/docs/Public/diy/model3/en_us/GUID-A84FDD77-7A8C-42F6-9385-E3F9CEE245A4.html) is available for a Model 3 example. Check that the document matches the vehicle and read its conditions before confirming an interval. A local file is labeled owner-supplied. The [publisher checks](docs/evidence/manual-publisher-validation.json) include a Toyota guide whose table produced no automatic suggestion.
+
+**Ask about this vehicle.** In the history panel, type a question such as “Which repair had the highest invoice?” or ask about the tire rotation interval in an imported manual. Follow the record link or inspect the quoted passage. Unsupported questions, uncertain allocations and missing sources are identified in the response.
+
+**Restore a workspace.** The standard launcher automatically snapshots SQLite while it is running. On restart it checks for damage and can restore from a verified local snapshot. See the [operator instructions and measured recovery times](docs/verification/storage-recovery.md).
+
 ## Pinned versions
+
+The final report compares deployment options at the architecture level. Local inference keeps receipts on the owner's device and works offline once the weights are installed; the owner supplies adequate memory and compute. Hosted inference offloads model execution to the provider and requires network access, credentials, a policy for sending receipts and a plan for usage charges. Local receipt accuracy and latency are measured. Hosted performance and cost per receipt were not measured.
+
+For the optional seven-day observation on a designated computer, see the [availability procedure](docs/verification/seven-day-core-availability.md). The readiness check uses a disposable vehicle and starts no official observation.
 
 | Component | Pinned version | Notes |
 | --- | --- | --- |
 | Python | 3.10 or later | CI runs 3.12 on Ubuntu, Windows, and macOS, plus 3.10, 3.11, and 3.13 on Ubuntu. |
-| Python packages | None | Standard library only, including SQLite. There is nothing to `pip install`. |
+| Optional PDF dependency | See [pinned reader](CarCareLog/requirements-manual-pdf.txt) | Text and approved publisher HTML import, history lookup and SQLite recovery use the standard library. |
 | Model runtime | Ollama with Qwen3.5 vision support | Use a current Ollama release that supports this model and JSON-schema outputs. The app talks to it only on `127.0.0.1`. |
 | Language model | `qwen3.5:4b` | Qwen3.5 4B from the [Ollama library](https://ollama.com/library/qwen3.5:4b), with image and text input. |
 | Quantization | Q4_K_M (4-bit, GGUF) | The GGUF weights start with `sha256:a9d0a3e1d8c9` and the vision projector with `sha256:e56a899b1540`. |
@@ -135,8 +145,8 @@ Open [T18 Universe Context](https://cloud.innoslate.com/cornell/p/746/diagrams/a
 | --- | --- | --- |
 | Ext.1 Vehicle Owner | Working | The [web interface](CarCareLog/frontend/index.html) and [browser interactions](CarCareLog/frontend/app.js) support manual entry and receipt text or image drafting with review. |
 | C.0 CarCareLog System | Partial | C.1 is the browser UI. C.2 is the [HTTP service](CarCareLog/backend/app.py) with [F.2.2 coordination](CarCareLog/backend/function_f22.py). C.3 stores confirmed records in SQLite. The [optional local account service](CarCareLog/backend/owner_site.py) signs owners in and gives each account a separate ledger on the same device. |
-| Ext.2 AI Model Runtime | Working locally | The [runtime adapter](CarCareLog/backend/receipt_runtime.py) calls the pinned model in a local Ollama service. The local adapter supports JPEG/PNG and pasted text. General questions and hosted product operation remain open. |
-| Ext.3 Application Operator | Partial | The operator sets the model, runtime port, and timeout with environment variables and starts and stops the app from a terminal. A dedicated operator interface and automated recovery are pending. |
+| Ext.2 AI Model Runtime | Working locally | The [runtime adapter](CarCareLog/backend/receipt_runtime.py) calls the pinned model in a local Ollama service. The local adapter supports JPEG/PNG and pasted text. Typed vehicle questions use local retrieval and verified record arithmetic. Optional loopback keyword expansion receives only the question. The product runs locally. |
+| Ext.3 Application Operator | Partial | The operator sets the model, runtime port, and timeout with environment variables and starts and stops the app from a terminal. Startup integrity checks and automatic snapshots cover local recovery. Operators use the documented CLI. |
 
 The service provider gives receipts to the owner outside the application. There is no direct service-provider integration.
 
@@ -145,9 +155,9 @@ The service provider gives receipts to the owner outside the application. There 
 | Use case | Current build |
 | --- | --- |
 | UC.1 Maintenance records | Create, edit, delete, search or export confirmed records. A new record can contain several services on one receipt. A new save checks for an existing entry with the same vehicle, date, shop and total. Changing a receipt source invalidates its AI draft. |
-| UC.2 Maintenance reminders | A rule uses a source reference and a mileage or calendar interval. The dashboard warning window is 500 international miles (804.672 km) or 30 days. A future dated service can also be exported to the owner's calendar with a local alert. |
+| UC.2 Maintenance reminders | An owner can enter an interval directly or import a manual and confirm a source-linked suggestion. The dashboard warning window is 500 international miles (804.672 km) or 30 days. A future dated service can also be exported to the owner's calendar with a local alert. |
 | UC.3 Maintenance expenses | Each confirmed receipt contributes its total once to recorded spending and the monthly chart. Its category applies to the whole receipt. |
-| UC.4 Record questions | Four history lookups cover total spending, last oil change, last tire-rotation mileage and brake spending for the year. Use a source link to open its record. A mixed-service receipt without item prices is identified separately in brake-spending answers. Free-form and vehicle-manual questions remain open. |
+| UC.4 Record questions | Four history lookups cover total spending, last oil change, last tire-rotation mileage and brake spending for the year. Use a source link to open its record. A mixed-service receipt without item prices is identified separately in brake-spending answers. Typed queries can also search vehicle records or quote an imported manual; weak matches are labeled and missing evidence is reported. |
 
 ## Design decisions and risks
 

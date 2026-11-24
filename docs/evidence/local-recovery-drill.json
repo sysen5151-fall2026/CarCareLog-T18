@@ -1,0 +1,38 @@
+{
+  "fixture": "fresh disposable directory, synthetic demo receipts, recent completed snapshot",
+  "python": "3.14.8",
+  "platform": "Windows",
+  "scheduled_interval_seconds_while_running": 3600,
+  "results": [
+    {
+      "mode": "single_owner",
+      "fault": "corrupt ledger",
+      "snapshot_capture_began_utc": "2026-11-24T01:26:34.238+00:00",
+      "fault_injected_utc": "2026-11-24T01:26:34.266+00:00",
+      "http_validation_completed_utc": "2026-11-24T01:26:34.828+00:00",
+      "backup_point_age_seconds_upper_bound": 0.0277,
+      "incident_to_verified_http_seconds": 0.5628,
+      "backup_point_within_24_hours": true,
+      "recovery_within_24_hours": true,
+      "confirmed_receipts": 3,
+      "confirmed_total_cents": 35999,
+      "post_snapshot_write_lost_as_expected": true,
+      "isolated_second_account_verified": null
+    },
+    {
+      "mode": "local_accounts",
+      "fault": "corrupt ledger and missing account registry",
+      "snapshot_capture_began_utc": "2026-11-24T01:26:35.125+00:00",
+      "fault_injected_utc": "2026-11-24T01:26:35.167+00:00",
+      "http_validation_completed_utc": "2026-11-24T01:26:35.965+00:00",
+      "backup_point_age_seconds_upper_bound": 0.0426,
+      "incident_to_verified_http_seconds": 0.7977,
+      "backup_point_within_24_hours": true,
+      "recovery_within_24_hours": true,
+      "confirmed_receipts": 3,
+      "confirmed_total_cents": 35999,
+      "post_snapshot_write_lost_as_expected": true,
+      "isolated_second_account_verified": true
+    }
+  ]
+}

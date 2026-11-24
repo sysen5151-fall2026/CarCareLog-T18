@@ -68,6 +68,8 @@ async function downloadCalendar(ruleId) {
   message('Calendar file downloaded. Import it into your phone calendar and check the alert. If the service date changes, replace the imported event.');
 }
 function render() {
+  window.carManual?.refresh(currentId);
+  window.resetGroundedQuestions?.();
   $('mileage-stat').textContent = data.vehicle.mileage.toLocaleString() + ' km';
   $('cost-stat').textContent = money(data.total_cents);
   $('count-stat').textContent = data.records.length;
