@@ -1,0 +1,45 @@
+{
+  "request": "ES_CONTINUOUS | ES_SYSTEM_REQUIRED",
+  "display_required": false,
+  "before": {
+    "active_scheme": "381b4222-f694-41f0-9685-ff5bb260df2e",
+    "display": {
+      "ac_seconds": 300,
+      "dc_seconds": 180
+    },
+    "standby": {
+      "ac_seconds": 300,
+      "dc_seconds": 180
+    }
+  },
+  "requested_utc": "2026-11-26T23:43:10.865250+00:00",
+  "previous_thread_flags": "0x80000000",
+  "resume_requested_utc": "2026-11-27T01:10:35.989670+00:00",
+  "resume_previous_thread_flags": "0x80000000",
+  "resume_reason": "User requested a brief pause and then resumed the task. Original observer exited. Its thread-scoped request expired on exit.",
+  "at_resume": {
+    "active_scheme": "381b4222-f694-41f0-9685-ff5bb260df2e",
+    "display": {
+      "ac_seconds": 300,
+      "dc_seconds": 180
+    },
+    "standby": {
+      "ac_seconds": 300,
+      "dc_seconds": 180
+    }
+  },
+  "restore_call_succeeded": true,
+  "released_utc": "2026-11-27T01:43:12.899125+00:00",
+  "after": {
+    "active_scheme": "381b4222-f694-41f0-9685-ff5bb260df2e",
+    "display": {
+      "ac_seconds": 300,
+      "dc_seconds": 180
+    },
+    "standby": {
+      "ac_seconds": 300,
+      "dc_seconds": 180
+    }
+  },
+  "same_plan_and_timeouts": true
+}

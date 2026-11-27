@@ -35,7 +35,14 @@ The ZIP includes a [synthetic oil-change receipt](CarCareLog/data/demo-receipt.p
 
 The final report compares deployment options at the architecture level. Local inference keeps receipts on the owner's device and works offline once the weights are installed; the owner supplies adequate memory and compute. Hosted inference offloads model execution to the provider and requires network access, credentials, a policy for sending receipts and a plan for usage charges. Local receipt accuracy and latency are measured. Hosted performance and cost per receipt were not measured.
 
-During the [two-hour local dashboard check](docs/evidence/two-hour-local-availability.json), 55 of 121 scheduled reads ran. All 55 returned the expected vehicle, three receipts and the correct total. The collector missed 66 slots. Monitoring resumed on the same fixture after a service restart. Service availability during the gaps is unknown.
+Two separate two-hour runs checked the same local dashboard every minute, including both endpoints. A successful read returned HTTP 200, the expected vehicle, three receipts and $359.99.
+
+| Observation | Scheduled | Attempted | Correct | Failed | Missed | Sampling coverage |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| [Original run](docs/evidence/two-hour-local-availability.json) | 121 | 55 | 55 | 0 | 66 | 45.45% |
+| [Repeat with idle sleep inhibited](docs/evidence/two-hour-local-availability-repeat.json) | 121 | 121 | 121 | 0 | 0 | 100.00% |
+
+The first collector resumed after a service restart. Service status at its 66 unobserved times is unknown. The repeat collector and fixture service restarted after minute 86 when the session briefly paused. Minute 87 ran within its scheduled slot. The repeat used a temporary Windows idle-sleep request and allowed the display to turn off. The [power record](docs/evidence/two-hour-local-availability-repeat-power.json) confirms release of the request and matching power settings before and after. The comparison does not establish what caused the first run's gaps.
 
 The [earlier two-minute check](docs/evidence/short-local-availability.json) recorded three successful reads and a separate planned restart. The [seven-day observation](docs/verification/seven-day-core-availability.md) remains an optional follow-up. Its 99% availability target has not been measured.
 
